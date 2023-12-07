@@ -1,7 +1,7 @@
 import typing
 from enum import IntFlag, auto
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
 
 from sortedcontainers import SortedList
@@ -18,7 +18,7 @@ class State(IntFlag):
 
 class CellIn2DArray(QPushButton):
 
-    def __init__(self, parent: typing.Optional[QWidget] = ..., row=0, column=0, width=30, height=30, text='X') -> None:
+    def __init__(self, parent=None, row=0, column=0, width=30, height=30, text='X') -> None:
         super().__init__(parent)
         self.setText(text)
         # zero based position inside a 2D array
@@ -76,14 +76,24 @@ class CellIn2DArray(QPushButton):
 
 class Buttons2DArrayWidget(QWidget):
 
-    valid_cell_neighbours = ['ALL', 'COLUMN', 'ROW', 'RISING_DIAGONAL', 'FALLING_DIAGONAL']
+    ALL_NEIGHBOURS = 'ALL'
+    COLUMN_NEIGHBOURS = 'COLUMN_NEIGHBOURS'
+    ROW_NEIGHBOURS = 'ROW_NEIGHBOURS'
+    RISING_DIAGONAL_NEIGHBOURS = 'RISING_DIAGONAL_NEIGHBOURS'
+    FALLING_DIAGONAL_NEIGHBOURS = 'FALLING_DIAGONAL_NEIGHBOURS'
+    valid_cell_neighbours = [ALL_NEIGHBOURS,
+                             COLUMN_NEIGHBOURS,
+                             ROW_NEIGHBOURS,
+                             RISING_DIAGONAL_NEIGHBOURS,
+                             FALLING_DIAGONAL_NEIGHBOURS]
 
-    def __init__(self, parent=..., flags=..., n_rows=15, n_columns=15):
-        super().__init__(parent, flags)
+    def __init__(self, parent=None, n_rows=15, n_columns=15):
+
+        super().__init__(parent)
         self.n_rows = n_rows
         self.n_columns = n_columns
         self.selected_buttons = SortedList()
-        self.layout = QtWidgets.QGridLayout
+        self.layout = QtWidgets.QGridLayout(self)
         for r in range(self.n_rows):
             for c in range(self.n_columns):
                 cell = CellIn2DArray(self, r, c)
@@ -95,10 +105,40 @@ class Buttons2DArrayWidget(QWidget):
         nbs = which_neighbours.upper()
         if which_neighbours not in self.valid_cell_neighbours:
             raise Exception("Not valid value for neighbours\n. Valid types are:  %s", self.valid_cell_neighbours)
-        item = self.layout().itemAtPosition(cell.row, cell.column)
+        item = self.layout.itemAtPosition(cell.row, cell.column)
         if cell != item:
             raise Exception("Cell not found in GridLayout.\n")
-        
+        neighbours = SortedList()
+        if which_neighbours == self.ROW_NEIGHBOURS:
+            if cell.column > 0:
+                neighbours.add(self.layout.itemAtPosition(cell.row, cell.column - 1))
+            if cell.column < self.n_columns - 1:
+                neighbours.add(self.layout.itemAtPosition(cell.row, cell.column + 1))
+        if which_neighbours == self.COLUMN_NEIGHBOURS:
+            if cell.row > 0:
+                neighbours.add(self.layout.itemAtPosition(cell.row - 1, cell.column))
+            if cell.row < self.n_rows - 1:
+                neighbours.add(self.layout.itemAtPosition(cell.row + 1, cell.column))
+        if which_neighbours == self.RISING_DIAGONAL_NEIGHBOURS:
+            if cell.row > 0:
+                neighbours.add(self.layout.itemAtPosition(cell.row - 1, cell.column + 1))
+            if cell.row < self.n_rows - 1:
+                neighbours.add(self.layout.itemAtPosition(cell.row + 1, cell.column - 1))
+        if which_neighbours == self.FALLING_DIAGONAL_NEIGHBOURS:
+            if cell.row > 0:
+                neighbours.add(self.layout.itemAtPosition(cell.row - 1, cell.column - 1))
+            if cell.row < self.n_rows - 1:
+                neighbours.add(self.layout.itemAtPosition(cell.row + 1, cell.column + 1))
+        if which_neighbours == self.ALL_NEIGHBOURS:
+            for n in self.get_neighbours(cell, self.ROW_NEIGHBOURS):
+                neighbours.add(n)
+            for n in self.get_neighbours(cell, self.COLUMN_NEIGHBOURS):
+                neighbours.add(n)
+            for n in self.get_neighbours(cell, self.RISING_DIAGONAL_NEIGHBOURS):
+                neighbours.add(n)
+            for n in self.get_neighbours(cell, self.FALLING_DIAGONAL_NEIGHBOURS):
+                neighbours.add(n)
+        return neighbours
 
     def clicked_event_handler(self, cell):
         if self.selected:
@@ -125,4 +165,5 @@ if __name__ == "__main__":
     print(b)
     b.set_enable(False)
     print(b)
+    w = Buttons2DArrayWidget(None, 15, 15)
     sys.exit(app.exec_())
