@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>consumo</class>
+ <widget class="QWidget" name="consumo">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>802</width>
+    <height>507</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Gráfico de consumo del gas</string>
+  </property>
+  <widget class="QPushButton" name="generar_grafico_button">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>400</y>
+     <width>471</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Generar Gráfico</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="consumos_groupBox">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>50</y>
+     <width>221</width>
+     <height>421</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Consumos</string>
+   </property>
+   <widget class="QWidget" name="formLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>20</y>
+      <width>160</width>
+      <height>321</height>
+     </rect>
+    </property>
+    <layout class="QFormLayout" name="consumo_meses">
+     <item row="0" column="0">
+      <widget class="QLabel" name="enero_l">
+       <property name="text">
+        <string>Enero</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="enero_lineEdit"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Febrero</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="febrero_lineEdit"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Marzo</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Abril</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Mayo</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Junio</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Julio</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Agosto</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Septiembre</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="0">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Octubre</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="0">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Noviembre</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="0">
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Diciembre</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="marzo_lineEdit"/>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="abril_lineEdit"/>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="mayo_lineEdit"/>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLineEdit" name="junio_lineEdit"/>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLineEdit" name="julio_lineEdit"/>
+     </item>
+     <item row="7" column="1">
+      <widget class="QLineEdit" name="agosto_lineEdit"/>
+     </item>
+     <item row="8" column="1">
+      <widget class="QLineEdit" name="sept_lineEdit"/>
+     </item>
+     <item row="9" column="1">
+      <widget class="QLineEdit" name="octubre_lineEdit"/>
+     </item>
+     <item row="10" column="1">
+      <widget class="QLineEdit" name="nov_lineEdit"/>
+     </item>
+     <item row="11" column="1">
+      <widget class="QLineEdit" name="dic_lineEdit"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="MatplotlibWidget11_sin" name="widget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>60</y>
+     <width>471</width>
+     <height>331</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MatplotlibWidget11_sin</class>
+   <extends>QWidget</extends>
+   <header>clases_mpl_pyqt</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
