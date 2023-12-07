@@ -4,6 +4,7 @@ from enum import IntFlag, auto
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
 
+from sortedcontainers import SortedList
 
 class State(IntFlag):
     """
@@ -23,6 +24,7 @@ class CellIn2DArray(QPushButton):
         # zero based position inside a 2D array
         self.row = row
         self.column = column
+        self.position_in_array = self.row * 100 + self.column
         self.setFixedSize(width, height)
         self.background_color = ''
         self.enable = None
@@ -31,7 +33,11 @@ class CellIn2DArray(QPushButton):
         self.set_enable(True)
         self.set_selected(False)
 
-        self.clicked.connect(self.clicked_handler)
+    def __lt__(self, other):
+        comp = False
+        if self.position_in_array < other.position_in_array:
+            comp = True
+        return comp
 
     def set_enable(self, enable):
         self.setEnabled(enable)
@@ -54,17 +60,12 @@ class CellIn2DArray(QPushButton):
                 self.background_color = 'Lightorange'
         self.setStyleSheet("background-color: " + self.background_color)
 
-    def clicked_handler(self):
-        if self.selected:
-            self.set_selected(False)
-        else:
-            self.set_selected(True)
-
     def __str__(self) -> str:
         r = super().__str__() + ':\n'
         r = r + '{\n'
         r = r + '\ttext = ' + self.text() + '\n'
         r = r + '\trow, column = ' + str(self.row) + ',' + str(self.column) + '\n'
+        r = r + '\tposition in array = ' + str(self.position_in_array) + '\n'
         r = r + '\twidth, height = ' + str(self.width()) + ',' + str(self.height()) + '\n'
         r = (r + '\tenable, selected = ' +
              str(self.enable) + ', ' + str(self.selected) + ', ' + '\n')
@@ -81,17 +82,31 @@ class Buttons2DArrayWidget(QWidget):
         super().__init__(parent, flags)
         self.n_rows = n_rows
         self.n_columns = n_columns
-        layout = QtWidgets.QGridLayout
+        self.selected_buttons = SortedList()
+        self.layout = QtWidgets.QGridLayout
         for r in range(self.n_rows):
             for c in range(self.n_columns):
-                layout.addWidget(CellIn2DArray(self, r, c), r, c)
+                cell = CellIn2DArray(self, r, c)
+                cell.clicked.connect(lambda foo_param, x=cell: self.clicked_event_handler(x))
+                self.layout.addWidget(cell, r, c)
+        self.setLayout(self.layout)
 
     def get_neighbours(self, cell: CellIn2DArray, which_neighbours: str):
         nbs = which_neighbours.upper()
         if which_neighbours not in self.valid_cell_neighbours:
             raise Exception("Not valid value for neighbours\n. Valid types are:  %s", self.valid_cell_neighbours)
-    
+        item = self.layout().itemAtPosition(cell.row, cell.column)
+        if cell != item:
+            raise Exception("Cell not found in GridLayout.\n")
+        
 
+    def clicked_event_handler(self, cell):
+        if self.selected:
+            self.set_selected(False)
+            self.selected_buttons.remove(cell)
+        else:
+            self.set_selected(True)
+            self.selected_buttons.add(cell)
 
     def __str__(self):
         r = ''
@@ -104,7 +119,7 @@ if __name__ == "__main__":
     import sys
 
     app = QApplication(sys.argv)
-    b = CellIn2DArray(None, 1, 2, 30, 30, 'X')
+    b = CellIn2DArray(None, 0, 1, 30, 30, 'X')
     print(b)
     b.set_selected(True)
     print(b)
