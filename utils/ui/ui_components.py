@@ -187,20 +187,21 @@ class Buttons2DArrayWidget(QWidget):
                 # row case
                 self.get_neighbours(self.selected_buttons[0], self.ROW_NEIGHBOURS)[0].set_enable(True)
                 self.get_neighbours(self.selected_buttons[1], self.ROW_NEIGHBOURS)[1].set_enable(True)
-            if delta_c == 0:
+            elif delta_c == 0:
                 # column case
                 self.get_neighbours(self.selected_buttons[0], self.COLUMN_NEIGHBOURS)[0].set_enable(True)
                 self.get_neighbours(self.selected_buttons[1], self.COLUMN_NEIGHBOURS)[1].set_enable(True)
-            if delta_c < 0:
+            elif delta_c > 0:
                 # rising diagonal case
-                pass
-            if delta_c < 0:
+                self.get_neighbours(self.selected_buttons[0], self.RISING_DIAGONAL_NEIGHBOURS)[0].set_enable(True)
+                self.get_neighbours(self.selected_buttons[1], self.RISING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
+            elif delta_c < 0:
                 # falling diagonal case
-                pass
+                self.get_neighbours(self.selected_buttons[0], self.FALLING_DIAGONAL_NEIGHBOURS)[0].set_enable(True)
+                self.get_neighbours(self.selected_buttons[1], self.FALLING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
 
 
-
-    def __str__(self):
+def __str__(self):
         r = ''
         r = r + super().__str__() + ':\n'
         r = r + '{\n'
