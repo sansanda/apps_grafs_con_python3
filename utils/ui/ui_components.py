@@ -1,9 +1,14 @@
+import random
+import string
 from enum import IntFlag, auto
+from time import sleep
+
 from PyQt5 import QtWidgets, Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
 from sortedcontainers import SortedList
 
 import logging
+
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 
@@ -83,10 +88,11 @@ class Buttons2DArrayWidget(QWidget):
         self.layout = QtWidgets.QGridLayout(self)
         for r in range(self.n_rows):
             for c in range(self.n_columns):
-                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, 'X')
+                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, '')
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
+        self.random_populate_all_buttons(overwrite=False)
 
     def enable_all_buttons(self, enable):
         for r in range(self.n_rows):
@@ -98,44 +104,44 @@ class Buttons2DArrayWidget(QWidget):
             for c in range(self.n_columns):
                 self.layout.itemAtPosition(r, c).widget().set_selected(select)
 
-    def get_neighbours(self, cell: CellIn2DArray, which_neighbours: str):
+    def get_button_neighbours(self, button: CellIn2DArray, which_neighbours: str):
         # logging.info('looking for the neighbours of the button: %s', str(cell))
         nbs = which_neighbours.upper()
         if which_neighbours not in self.valid_cell_neighbours:
             raise Exception("Not valid value for neighbours\n. Valid types are:  %s", self.valid_cell_neighbours)
-        item = self.layout.itemAtPosition(cell.row, cell.column).widget()
+        item = self.layout.itemAtPosition(button.row, button.column).widget()
         # logging.debug('cell getted in layout at pos (%s,%s) = %s ', cell.row, cell.column, str(item))
-        if cell != item:
+        if button != item:
             raise Exception("Cell not found in GridLayout.\n")
         neighbours = SortedList()
         if which_neighbours == self.ROW_NEIGHBOURS:
-            if cell.column > 0:
-                neighbours.add(self.layout.itemAtPosition(cell.row, cell.column - 1).widget())
-            if cell.column < self.n_columns - 1:
-                neighbours.add(self.layout.itemAtPosition(cell.row, cell.column + 1).widget())
+            if button.column > 0:
+                neighbours.add(self.layout.itemAtPosition(button.row, button.column - 1).widget())
+            if button.column < self.n_columns - 1:
+                neighbours.add(self.layout.itemAtPosition(button.row, button.column + 1).widget())
         if which_neighbours == self.COLUMN_NEIGHBOURS:
-            if cell.row > 0:
-                neighbours.add(self.layout.itemAtPosition(cell.row - 1, cell.column).widget())
-            if cell.row < self.n_rows - 1:
-                neighbours.add(self.layout.itemAtPosition(cell.row + 1, cell.column).widget())
+            if button.row > 0:
+                neighbours.add(self.layout.itemAtPosition(button.row - 1, button.column).widget())
+            if button.row < self.n_rows - 1:
+                neighbours.add(self.layout.itemAtPosition(button.row + 1, button.column).widget())
         if which_neighbours == self.RISING_DIAGONAL_NEIGHBOURS:
-            if (cell.row + 1) < self.n_rows and (cell.column - 1) >= 0:
-                neighbours.add(self.layout.itemAtPosition(cell.row + 1, cell.column - 1).widget())
-            if (cell.row - 1) >= 0 and (cell.column + 1) < self.n_columns:
-                neighbours.add(self.layout.itemAtPosition(cell.row - 1, cell.column + 1).widget())
+            if (button.row + 1) < self.n_rows and (button.column - 1) >= 0:
+                neighbours.add(self.layout.itemAtPosition(button.row + 1, button.column - 1).widget())
+            if (button.row - 1) >= 0 and (button.column + 1) < self.n_columns:
+                neighbours.add(self.layout.itemAtPosition(button.row - 1, button.column + 1).widget())
         if which_neighbours == self.FALLING_DIAGONAL_NEIGHBOURS:
-            if (cell.row - 1) >= 0 and (cell.column - 1) >= 0:
-                neighbours.add(self.layout.itemAtPosition(cell.row - 1, cell.column - 1).widget())
-            if (cell.row + 1) < self.n_rows and (cell.column + 1) < self.n_columns:
-                neighbours.add(self.layout.itemAtPosition(cell.row + 1, cell.column + 1).widget())
+            if (button.row - 1) >= 0 and (button.column - 1) >= 0:
+                neighbours.add(self.layout.itemAtPosition(button.row - 1, button.column - 1).widget())
+            if (button.row + 1) < self.n_rows and (button.column + 1) < self.n_columns:
+                neighbours.add(self.layout.itemAtPosition(button.row + 1, button.column + 1).widget())
         if which_neighbours == self.ALL_NEIGHBOURS:
-            for n in self.get_neighbours(cell, self.ROW_NEIGHBOURS):
+            for n in self.get_button_neighbours(button, self.ROW_NEIGHBOURS):
                 neighbours.add(n)
-            for n in self.get_neighbours(cell, self.COLUMN_NEIGHBOURS):
+            for n in self.get_button_neighbours(button, self.COLUMN_NEIGHBOURS):
                 neighbours.add(n)
-            for n in self.get_neighbours(cell, self.RISING_DIAGONAL_NEIGHBOURS):
+            for n in self.get_button_neighbours(button, self.RISING_DIAGONAL_NEIGHBOURS):
                 neighbours.add(n)
-            for n in self.get_neighbours(cell, self.FALLING_DIAGONAL_NEIGHBOURS):
+            for n in self.get_button_neighbours(button, self.FALLING_DIAGONAL_NEIGHBOURS):
                 neighbours.add(n)
         return neighbours
 
@@ -144,25 +150,39 @@ class Buttons2DArrayWidget(QWidget):
             self.selected_buttons.remove(clicked_button)
         else:
             self.selected_buttons.add(clicked_button)
-        self.show_next_options(clicked_button)
+        self.show_next_selectable_buttons()
 
-    def show_next_options(self, clicked_button):
+    def show_next_selectable_buttons(self):
+        """
+        Show possible next selectable buttons in function of which pattern define the selected buttons.
+        Patterns:\n
+        0. no buttons selected
+        1. single button selected
+        2. selected buttons defining a row
+        3. selected buttons defining a column
+        4. selected buttons defining a diagonal which can be rising or falling
+        :return: None
+        """
+        # no buttons selected
         if len(self.selected_buttons) == 0:
             # enable all buttons and set all unselected
             self.enable_all_buttons(True)
             self.select_all_buttons(False)
+        # single button pattern
         if len(self.selected_buttons) == 1:
             # disable a deselect all buttons
             self.enable_all_buttons(False)
             self.select_all_buttons(False)
             self.selected_buttons[0].set_enable(True)
             self.selected_buttons[0].set_selected(True)
-            nbs = self.get_neighbours(self.selected_buttons[0], self.ALL_NEIGHBOURS)
+            nbs = self.get_button_neighbours(self.selected_buttons[0], self.ALL_NEIGHBOURS)
             for n in nbs:
                 n.set_enable(True)
+        # two buttons selected than can define: row, column or diagonal
         if len(self.selected_buttons) >= 2:
             self.enable_all_buttons(False)
             self.select_all_buttons(False)
+            # disable all buttons except the first and the last selected
             for i, b in enumerate(self.selected_buttons):
                 if i == 0 or i == (len(self.selected_buttons) - 1):
                     b.set_selected(True)
@@ -173,30 +193,47 @@ class Buttons2DArrayWidget(QWidget):
             delta_r = self.selected_buttons[0].row - self.selected_buttons[-1].row
             delta_c = self.selected_buttons[0].column - self.selected_buttons[-1].column
             logging.debug('delta_r, delta_c = %s, %s', delta_r, delta_c)
+            extrem_neighbours_to_enable = None
             if delta_r == 0:
-                # row case
-                self.get_neighbours(self.selected_buttons[0], self.ROW_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[-1], self.ROW_NEIGHBOURS)[1].set_enable(True)
+                # row pattern
+                extrem_neighbours_to_enable = self.ROW_NEIGHBOURS
             elif delta_c == 0:
-                # column case
-                self.get_neighbours(self.selected_buttons[0], self.COLUMN_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[-1], self.COLUMN_NEIGHBOURS)[1].set_enable(True)
+                # column pattern
+                extrem_neighbours_to_enable = self.COLUMN_NEIGHBOURS
             elif delta_c > 0:
-                # rising diagonal case
-                self.get_neighbours(self.selected_buttons[0], self.RISING_DIAGONAL_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[-1], self.RISING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
+                # rising diagonal pattern
+                extrem_neighbours_to_enable = self.RISING_DIAGONAL_NEIGHBOURS
             elif delta_c < 0:
-                # falling diagonal case
-                self.get_neighbours(self.selected_buttons[0], self.FALLING_DIAGONAL_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[-1], self.FALLING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
+                # falling diagonal pattern
+                extrem_neighbours_to_enable = self.FALLING_DIAGONAL_NEIGHBOURS
+            self.get_button_neighbours(self.selected_buttons[0], extrem_neighbours_to_enable)[0].set_enable(True)
+            self.get_button_neighbours(self.selected_buttons[-1], extrem_neighbours_to_enable)[1].set_enable(True)
+
+    def random_populate_all_buttons(self,
+                                    alphabet=[s.upper() for s in string.ascii_lowercase],
+                                    overwrite=True):
+        logging.info('Populating the 2D array')
+        for r in range(self.n_rows):
+            for c in range(self.n_columns):
+                button = self.layout.itemAtPosition(r, c).widget()
+                if len(button.text()) == 0 or overwrite:
+                    self.layout.itemAtPosition(r, c).widget().setText(random.sample(alphabet, 1)[0])
+
+    def hide_word(self, word_to_hide, enable_collisions=True):
+        reverse = random.sample([True, False], 1)
+        if reverse:
+            word_to_hide = word_to_hide[::-1]
+        orientation = random.sample(['ROW', 'COLUMN', 'R_DIAGONAL', 'F_DIAGONAL'], 1)
+        starting_row = random.randint(0, self.n_rows - len(word_to_hide) + 1)
+        starting_column = random.randint(0, self.n_columns - len(word_to_hide) + 1)
 
 
-def __str__(self):
-    r = ''
-    r = r + super().__str__() + ':\n'
-    r = r + '{\n'
+    def __str__(self):
+        r = ''
+        r = r + super().__str__() + ':\n'
+        r = r + '{\n'
 
-    r = r + '}'
+        r = r + '}'
 
 
 if __name__ == "__main__":
