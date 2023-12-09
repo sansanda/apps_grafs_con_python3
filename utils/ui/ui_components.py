@@ -51,13 +51,13 @@ class CellIn2DArray(QPushButton):
 
     def update_background_color(self):
         if self.isEnabled():
-            self.background_color = 'Lightgreen'
+            self.background_color = 'lightgreen'
             if self.selected:
-                self.background_color = 'Orange'
+                self.background_color = 'orange'
         else:
-            self.background_color = 'Lightgrey'
+            self.background_color = 'lightgrey'
             if self.selected:
-                self.background_color = 'Lightorange'
+                self.background_color = 'lime'
         self.setStyleSheet("background-color: " + self.background_color)
 
     def __str__(self) -> str:
@@ -173,32 +173,35 @@ class Buttons2DArrayWidget(QWidget):
             nbs = self.get_neighbours(self.selected_buttons[0], self.ALL_NEIGHBOURS)
             for n in nbs:
                 n.set_enable(True)
-        if len(self.selected_buttons) == 2:
+        if len(self.selected_buttons) >= 2:
             self.enable_all_buttons(False)
             self.select_all_buttons(False)
-            self.selected_buttons[0].set_enable(True)
-            self.selected_buttons[0].set_selected(True)
-            self.selected_buttons[1].set_enable(True)
-            self.selected_buttons[1].set_selected(True)
-            delta_r = self.selected_buttons[0].row - self.selected_buttons[1].row
-            delta_c = self.selected_buttons[0].column - self.selected_buttons[1].column
+            for i, b in enumerate(self.selected_buttons):
+                if i == 0 or i == (len(self.selected_buttons) - 1):
+                    b.set_selected(True)
+                    b.set_enable(True)
+                else:
+                    b.set_selected(True)
+                    b.set_enable(False)
+            delta_r = self.selected_buttons[0].row - self.selected_buttons[-1].row
+            delta_c = self.selected_buttons[0].column - self.selected_buttons[-1].column
             logging.debug('delta_r, delta_c = %s, %s', delta_r, delta_c)
             if delta_r == 0:
                 # row case
                 self.get_neighbours(self.selected_buttons[0], self.ROW_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[1], self.ROW_NEIGHBOURS)[1].set_enable(True)
+                self.get_neighbours(self.selected_buttons[-1], self.ROW_NEIGHBOURS)[1].set_enable(True)
             elif delta_c == 0:
                 # column case
                 self.get_neighbours(self.selected_buttons[0], self.COLUMN_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[1], self.COLUMN_NEIGHBOURS)[1].set_enable(True)
+                self.get_neighbours(self.selected_buttons[-1], self.COLUMN_NEIGHBOURS)[1].set_enable(True)
             elif delta_c > 0:
                 # rising diagonal case
                 self.get_neighbours(self.selected_buttons[0], self.RISING_DIAGONAL_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[1], self.RISING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
+                self.get_neighbours(self.selected_buttons[-1], self.RISING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
             elif delta_c < 0:
                 # falling diagonal case
                 self.get_neighbours(self.selected_buttons[0], self.FALLING_DIAGONAL_NEIGHBOURS)[0].set_enable(True)
-                self.get_neighbours(self.selected_buttons[1], self.FALLING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
+                self.get_neighbours(self.selected_buttons[-1], self.FALLING_DIAGONAL_NEIGHBOURS)[1].set_enable(True)
 
 
 def __str__(self):
