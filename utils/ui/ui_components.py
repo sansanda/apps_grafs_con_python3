@@ -1,22 +1,10 @@
-import logging
-import typing
 from enum import IntFlag, auto
-
 from PyQt5 import QtWidgets, Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
-
 from sortedcontainers import SortedList
 
+import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-
-class State(IntFlag):
-    """
-    Auxiliary class create for translating the instance states string into
-    an Enum_IntEnum that will help to the app to manage such states.
-    """
-    ENABLE = auto()
-    SELECTED = auto()
-    SELECTABLE = auto()
 
 
 class CellIn2DArray(QPushButton):
@@ -75,7 +63,6 @@ class CellIn2DArray(QPushButton):
 
 
 class Buttons2DArrayWidget(QWidget):
-
     ALL_NEIGHBOURS = 'ALL'
     COLUMN_NEIGHBOURS = 'COLUMN_NEIGHBOURS'
     ROW_NEIGHBOURS = 'ROW_NEIGHBOURS'
@@ -205,11 +192,12 @@ class Buttons2DArrayWidget(QWidget):
 
 
 def __str__(self):
-        r = ''
-        r = r + super().__str__() + ':\n'
-        r = r + '{\n'
+    r = ''
+    r = r + super().__str__() + ':\n'
+    r = r + '{\n'
 
-        r = r + '}'
+    r = r + '}'
+
 
 if __name__ == "__main__":
     import sys
