@@ -90,14 +90,15 @@ class Buttons2DArrayWidget(QWidget):
         self.n_columns = n_columns
         self.selected_buttons = SortedList()
         self.layout = QtWidgets.QGridLayout(self)
+        self.layout.setSpacing(0)
         for r in range(self.n_rows):
             for c in range(self.n_columns):
-                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, '')
+                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, '*')
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
-        self.random_populate_all_buttons(overwrite=False)
-        # print(self.get_buttons_text(3,3,self.FALLING_DIAGONAL_ORIENTATION, 3))
+        # self.random_populate_all_buttons(overwrite=True)
+        self.hide_word('HOLA', True)
 
     def enable_all_buttons(self, enable):
         for r in range(self.n_rows):
@@ -231,35 +232,45 @@ class Buttons2DArrayWidget(QWidget):
         orientation = random.sample([self.ROW_ORIENTATION,
                                      self.COLUMN_ORIENTATION,
                                      self.RISING_DIAGONAL_ORIENTATION,
-                                     self.FALLING_DIAGONAL_ORIENTATION], 1)
-        starting_row = random.randint(0, self.n_rows - len(word_to_hide) + 1)
-        starting_column = random.randint(0, self.n_columns - len(word_to_hide) + 1)
+                                     self.FALLING_DIAGONAL_ORIENTATION], 1)[0]
+        starting_row = random.randint(0, self.n_rows - len(word_to_hide))
+        starting_column = random.randint(0, self.n_columns - len(word_to_hide))
         logging.debug('reverse = %s, '
                       'orientation = %s, '
                       'starting_row = %s, '
                       'starting_column = %s, ', reverse, orientation, starting_row, starting_column)
+        bs_text = self.get_buttons_text(starting_row, starting_column, orientation, len(word_to_hide))
+        # detect collision
+        for c in bs_text[:]:
+            print(c)
 
     def get_buttons_text(self, starting_row, starting_column, orientation, n_buttons):
-        buttons_list = []
+        logging.debug('getting buttons text giving parameters: n_buttons = %s, '
+                      'orientation = %s, '
+                      'starting_row = %s, '
+                      'starting_column = %s, ',n_buttons, orientation, starting_row, starting_column)
+        s = None
         if orientation == self.ROW_ORIENTATION:
-            for c in range(starting_column, starting_column + n_buttons):
-                buttons_list.append(self.layout.itemAtPosition(starting_row, c).widget())
+            if (starting_column + n_buttons) < self.n_columns:
+                s = ''
+                for c in range(starting_column, starting_column + n_buttons):
+                    s = s + self.layout.itemAtPosition(starting_row, c).widget().text()
         elif orientation == self.COLUMN_ORIENTATION:
-            for r in range(starting_row, starting_row + n_buttons):
-                buttons_list.append(self.layout.itemAtPosition(r, starting_column).widget())
+            if (starting_row + n_buttons) < self.n_rows:
+                s = ''
+                for r in range(starting_row, starting_row + n_buttons):
+                    s = s + self.layout.itemAtPosition(r, starting_column).widget().text()
         elif orientation == self.FALLING_DIAGONAL_ORIENTATION:
-            for i, r in enumerate(range(starting_row, starting_row + n_buttons)):
-                buttons_list.append(self.layout.itemAtPosition(r, starting_column + i).widget())
+            if (starting_row + n_buttons) < self.n_rows and (starting_column + n_buttons) < self.n_columns:
+                s = ''
+                for i, r in enumerate(range(starting_row, starting_row + n_buttons)):
+                    s = s + self.layout.itemAtPosition(r, starting_column + i).widget().text()
         elif orientation == self.RISING_DIAGONAL_ORIENTATION:
-            for i, c in enumerate(range(starting_column, starting_column + n_buttons)):
-                buttons_list.append(self.layout.itemAtPosition(starting_row - i, c).widget())
-        s = ''
-        for button in buttons_list:
-            s = s + button.text()
+            if (starting_row - n_buttons) >= 0 and (starting_column + n_buttons) < self.n_columns:
+                s = ''
+                for i, c in enumerate(range(starting_column, starting_column + n_buttons)):
+                    s = s + self.layout.itemAtPosition(starting_row - i, c).widget().text()
         return s
-
-
-
 
     def __str__(self):
         r = ''
