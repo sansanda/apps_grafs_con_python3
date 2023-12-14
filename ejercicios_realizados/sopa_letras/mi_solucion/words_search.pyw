@@ -19,7 +19,6 @@ class State(IntEnum):
     RUNNING = 2
     PAUSED = 3
     OVER = 4
-    LOADING_DATA = 5
 
 
 class WordsLoaderWorker(QObject):
@@ -83,42 +82,35 @@ class Words_Search(QtWidgets.QWidget):
         self.ui.buttons_array.hide_words(words_to_find, mark_word=False)
         self.ui.buttons_array.random_populate_all_buttons(overwrite=False)
 
-
-
-        # # Ui config
+        # Ui config
         # self.ui.progressBar.setMaximum(self.play_time)
         # self.ui.progressBar.setValue(self.play_time)
-        #
+
         # # Signals and Slots
-        # self.ui.startPushButton.clicked.connect(self.start)
-        # self.ui.pausePushButton.clicked.connect(self.pause)
-        # self.ui.resetPushButton.clicked.connect(self.reset)
-        # self.ui.progressBar.valueChanged.connect(self._checkFinishTimeGame)
-        # self.ui.lineEdit.returnPressed.connect(self._checkAnswer)
-        #
-        # self.timerTickerWorker = None
-        # self.timer_worker_thread = None
-        # self.wordsLoaderWorker = None
-        # self.loading_words_thread = None
-        #
-        # self.status = State.INITIATED
-        # self._updateUi()
+        self.ui.start_pause_pushButton.connect(self.start_pause_handler())
+        self.ui.resetPushButton.clicked.connect(self.reset)
+
+        self.timerTickerWorker = None
+        self.timer_worker_thread = None
+
+        self.status = State.INITIATED
+        self._updateUi()
         logging.info("Words_Search    : Initiated.")
 
-    def start(self):
+    def start_pause_handler(self):
         # game running
         if self.status == State.INITIATED:
-            self.status = State.LOADING_DATA
+            self.status = State.RUNNING
             self._updateUi()
 
-            # # Step 2: Create a QThread object for managing timer
-            # logging.info("WordsMatchingWidget    : Creating the timer thread...")
-            # self.timer_worker_thread = QThread()
-            # # Step 3: Create a worker object
-            # self.timerTickerWorker = TimerTickerWorker(self.interval, self.updateProgressBar)
-            # # Step 4: Move worker to the thread
-            # self.timerTickerWorker.moveToThread(self.timer_worker_thread)
-            # # Step 5: Connect signals and slots
+            # Step 2: Create a QThread object for managing timer
+            logging.info("Words_Search    : Creating the timer thread...")
+            self.timer_worker_thread = QThread()
+            # Step 3: Create a worker object
+            self.timerTickerWorker = TimerTickerWorker(self.interval, self.update_ramainig_time)
+            # Step 4: Move worker to the thread
+            self.timerTickerWorker.moveToThread(self.timer_worker_thread)
+            # Step 5: Connect signals and slots
             # # QObject::startTimer: Timers cannot be started from another thread
             # # self.timer_worker_thread.started.connect(self.timerTickerWorker.run)
             # self.timer_worker_thread.finished.connect(self.timerTickerWorker._quit)
@@ -209,7 +201,7 @@ class Words_Search(QtWidgets.QWidget):
 
     # UI updating
 
-    def updateProgressBar(self):
+    def update_ramainig_time(self):
         pass
         # if self.status == State.RUNNING:
         #     logging.debug("WordsMatchingWidget    : Updating Progress Bar.")
