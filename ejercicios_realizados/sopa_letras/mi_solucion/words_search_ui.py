@@ -85,7 +85,7 @@ class Ui_Words_Search_Form(object):
     def retranslateUi(self, Words_Search_Form):
         _translate = QtCore.QCoreApplication.translate
         Words_Search_Form.setWindowTitle(_translate("Words_Search_Form", "Words Search"))
-        self.remaining_time_label.setText(_translate("Words_Search_Form", "Ramaining Time: "))
+        self.remaining_time_label.setText(_translate("Words_Search_Form", "Remaining Time: "))
         self.found_words_label.setText(_translate("Words_Search_Form", "Words Found: "))
         self.words_to_find_label.setText(_translate("Words_Search_Form", "Words to Find: "))
         self.start_pause_pushButton.setText(_translate("Words_Search_Form", "Start"))
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     Words_Search_Form = QtWidgets.QWidget()
     ui = Ui_Words_Search_Form()
     ui.setupUi(Words_Search_Form, 15, 15)
-    ui.buttons_array.hide_words(words_to_hide, True)
+    ui.buttons_array.hide_words(words_to_hide, mark_word=False)
     ui.buttons_array.random_populate_all_buttons(overwrite=False)
     Words_Search_Form.show()
     sys.exit(app.exec_())

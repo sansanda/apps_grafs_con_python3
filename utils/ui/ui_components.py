@@ -97,9 +97,6 @@ class Buttons2DArrayWidget(QWidget):
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
-        # words_to_hide = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
-        # self.hide_words(words_to_hide, True)
-        # self.random_populate_all_buttons(overwrite=False)
 
     def clicked_event_handler(self, clicked_button):
         if clicked_button.selected:
