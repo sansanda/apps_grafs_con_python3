@@ -1,7 +1,7 @@
 import logging
 from freedictionaryapi.clients.sync_client import DictionaryApiClient
 from freedictionaryapi.errors import DictionaryApiNotFoundError
-from random_word import RandomWords
+from random_words import RandomWords
 
 
 def getRandomWord(min_nletters, max_nletters):

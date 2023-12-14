@@ -1,13 +1,8 @@
 import logging
-import re
-import sys
 from enum import IntEnum
-
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
-
-from ejercicios_realizados.acierta_palabras.mi_solucion.words_matching_ui import Ui_Form
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication
 
 from ejercicios_realizados.sopa_letras.mi_solucion.words_search_ui import Ui_Words_Search_Form
 from utils.languages.language_words_etc import getRandomWordAndDefinitions
@@ -28,61 +23,67 @@ class State(IntEnum):
 
 
 class WordsLoaderWorker(QObject):
-    word_available = pyqtSignal(str, list)
-    progress = pyqtSignal(int)
-    finished = pyqtSignal()
+    pass
+    # word_available = pyqtSignal(str, list)
+    # progress = pyqtSignal(int)
+    # finished = pyqtSignal()
+    #
+    # def __init__(self, n_words, min_letters_per_word, max_letters_per_word):
+    #     QObject.__init__(self)
+    #     self.status = None
+    #     logging.info("WordsLoaderWorker    : Initiating....")
+    #     self.n_words = n_words
+    #     self.min_letters_per_word = min_letters_per_word
+    #     self.max_letters_per_word = max_letters_per_word
+    #     self.status = State.INITIATED
+    #     logging.info("WordsLoaderWorker    : Initiated.")
+    #
+    # def run(self):
+    #     logging.disable(level=logging.NOTSET)
+    #     if self.status == State.INITIATED:
+    #         self.status = State.RUNNING
+    #         logging.info("WordsLoaderWorker    : Started.")
+    #         words_getted = 0
+    #         while words_getted < self.n_words:
+    #             word, word_definitions_list = getRandomWordAndDefinitions(self.min_letters_per_word,
+    #                                                                       self.max_letters_per_word)
+    #             words_getted = words_getted + 1
+    #             self.word_available.emit(word, word_definitions_list)
+    #             self.progress.emit(int(100 * words_getted / self.n_words))  # emit the percent
+    #         self.finished.emit()
+    #         self.status = State.INITIATED
+    #     logging.disable(level=logging.NOTSET)
+    #
+    # def _quit(self):
+    #     logging.info("WordsLoaderWorker    : Quitting....")
+    #     self.deleteLater()
 
-    def __init__(self, n_words, min_letters_per_word, max_letters_per_word):
-        QObject.__init__(self)
-        self.status = None
-        logging.info("WordsLoaderWorker    : Initiating....")
-        self.n_words = n_words
-        self.min_letters_per_word = min_letters_per_word
-        self.max_letters_per_word = max_letters_per_word
-        self.status = State.INITIATED
-        logging.info("WordsLoaderWorker    : Initiated.")
 
-    def run(self):
-        logging.disable(level=logging.NOTSET)
-        if self.status == State.INITIATED:
-            self.status = State.RUNNING
-            logging.info("WordsLoaderWorker    : Started.")
-            words_getted = 0
-            while words_getted < self.n_words:
-                word, word_definitions_list = getRandomWordAndDefinitions(self.min_letters_per_word,
-                                                                          self.max_letters_per_word)
-                words_getted = words_getted + 1
-                self.word_available.emit(word, word_definitions_list)
-                self.progress.emit(int(100 * words_getted / self.n_words))  # emit the percent
-            self.finished.emit()
-            self.status = State.INITIATED
-        logging.disable(level=logging.NOTSET)
-
-    def _quit(self):
-        logging.info("WordsLoaderWorker    : Quitting....")
-        self.deleteLater()
-
-
-class WordsSearchWidget(QtWidgets.QWidget):
+class Words_Search(QtWidgets.QWidget):
     """
     interval: interval in msseconds
     """
 
     def __init__(self,
+                 words_to_find,
                  play_time=60,
                  interval=1000,
-                 words_to_find = 5,
+                 n_rows=15,
+                 n_columns=15,
                  parent=None):
 
         QtWidgets.QWidget.__init__(self)
-        logging.info("WordsMatchingWidget    : Initiating....")
-        self.ui = Ui_Words_Search_Form()
-        self.ui.setupUi(self)
+        logging.info("Words_Search    : Initiating....")
         self.words_to_find = words_to_find
         self.found_words = 0
         self.play_time = play_time
         self.interval = interval
-        self.words = list()
+        self.ui = Ui_Words_Search_Form()
+        self.ui.setupUi(self, n_rows, n_columns)
+        self.ui.buttons_array.hide_words(words_to_find, mark_word=False)
+        self.ui.buttons_array.random_populate_all_buttons(overwrite=False)
+
+
 
         # # Ui config
         # self.ui.progressBar.setMaximum(self.play_time)
@@ -102,7 +103,7 @@ class WordsSearchWidget(QtWidgets.QWidget):
         #
         # self.status = State.INITIATED
         # self._updateUi()
-        logging.info("WordsSearchWidget    : Initiated.")
+        logging.info("Words_Search    : Initiated.")
 
     def start(self):
         # game running
@@ -156,17 +157,16 @@ class WordsSearchWidget(QtWidgets.QWidget):
             self._updateUi()
             self.timerTickerWorker.run()
 
-
     def pause(self):
         # game paused
-        logging.info("WordsMatchingWidget    : Pausing.")
+        logging.info("Words_Search    : Pausing.")
         self.status = State.PAUSED
         self._updateUi()
         # self.timerTickerWorker.pause()
-        logging.info("WordsMatchingWidget    : Paused.")
+        logging.info("Words_Search    : Paused.")
 
     def reset(self):
-        logging.info("WordsMatchingWidget    : Initiating.")
+        logging.info("Words_Search    : Initiating.")
         self.status = State.INITIATED
         self._updateUi()
         # self.timer_worker_thread.quit()
@@ -175,7 +175,7 @@ class WordsSearchWidget(QtWidgets.QWidget):
         # self.wordsLoaderWorker = None
         # self.ui.progressBar.setMaximum(self.play_time)
         # self.ui.progressBar.setValue(self.play_time)
-        logging.info("WordsMatchingWidget    : Initiated.")
+        logging.info("Words_Search    : Initiated.")
 
     def over(self):
         self.status = State.OVER
@@ -183,8 +183,9 @@ class WordsSearchWidget(QtWidgets.QWidget):
 
     def _checkFinishTimeGame(self):
         pass
-#         if int(self.ui.progressBar.text()) <= 0:
-#             self._checkFinish()
+
+    #         if int(self.ui.progressBar.text()) <= 0:
+    #             self._checkFinish()
 
     def _checkFinish(self):
         pass
@@ -281,27 +282,29 @@ class WordsSearchWidget(QtWidgets.QWidget):
 
     # Events management
     def closeEvent(self, event):
-        logging.info("WordsMatchingWidget    : Closing.")
-        # self.timer_worker_thread.quit()
-        # self.loading_words_thread.quit()
-        logging.info("WordsMatchingWidget    : Closed.")
+        logging.info("Words_Search: Closing.")
+        logging.info("Words_Search: Closed.")
 
 
 if __name__ == "__main__":
+    import sys
+
     _format = "%(asctime)s: %(message)s"
-    logging.basicConfig(format=_format, level=logging.CRITICAL,
+    logging.basicConfig(format=_format, level=logging.INFO,
                         datefmt="%H:%M:%S")
     play_time = 120  # seconds
     interval = 1000  # ms
-    min_n_letters_per_word = 6
-    max_n_letters_per_word = 9
-    words_to_find = 5
-    letters_to_show = 5
+    words_to_find = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
+    n_columns = 15
+    n_rows = 15
 
     logging.info("Main    : creating main....")
     app = QApplication(sys.argv)
-    myapp = WordsSearchWidget(play_time,
-                              interval,
-                              words_to_find,)
+    myapp = Words_Search(words_to_find,
+                         play_time,
+                         interval,
+                         n_rows,
+                         n_columns,
+                         None)
     myapp.show()
     sys.exit(app.exec_())
