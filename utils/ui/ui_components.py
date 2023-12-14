@@ -97,9 +97,16 @@ class Buttons2DArrayWidget(QWidget):
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
-        words_to_hide = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
-        self.hide_words(words_to_hide, False)
-        self.random_populate_all_buttons(overwrite=False)
+        # words_to_hide = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
+        # self.hide_words(words_to_hide, True)
+        # self.random_populate_all_buttons(overwrite=False)
+
+    def clicked_event_handler(self, clicked_button):
+        if clicked_button.selected:
+            self.selected_buttons.remove(clicked_button)
+        else:
+            self.selected_buttons.add(clicked_button)
+        self.show_next_selectable_buttons()
 
     def enable_all_buttons(self, enable):
         for r in range(self.n_rows):
@@ -151,13 +158,6 @@ class Buttons2DArrayWidget(QWidget):
             for n in self.get_button_neighbours(button, self.FALLING_DIAGONAL_NEIGHBOURS):
                 neighbours.add(n)
         return neighbours
-
-    def clicked_event_handler(self, clicked_button):
-        if clicked_button.selected:
-            self.selected_buttons.remove(clicked_button)
-        else:
-            self.selected_buttons.add(clicked_button)
-        self.show_next_selectable_buttons()
 
     def show_next_selectable_buttons(self):
         """
@@ -226,6 +226,45 @@ class Buttons2DArrayWidget(QWidget):
                 if button.text() == self.empty_cell_character or overwrite:
                     self.layout.itemAtPosition(r, c).widget().setText(random.choice(alphabet))
 
+    def get_buttons(self, starting_row, starting_column, orientation, n_buttons):
+        logging.debug('getting buttons giving parameters: n_buttons = %s, '
+                      'orientation = %s, '
+                      'starting_row = %s, '
+                      'starting_column = %s, ', n_buttons, orientation, starting_row, starting_column)
+        buttons = []
+        if orientation == self.ROW_ORIENTATION:
+            if (starting_column + n_buttons) < self.n_columns:
+                for c in range(starting_column, starting_column + n_buttons):
+                    buttons.append(self.layout.itemAtPosition(starting_row, c).widget())
+        elif orientation == self.COLUMN_ORIENTATION:
+            if (starting_row + n_buttons) < self.n_rows:
+                for r in range(starting_row, starting_row + n_buttons):
+                    buttons.append(self.layout.itemAtPosition(r, starting_column).widget())
+        elif orientation == self.FALLING_DIAGONAL_ORIENTATION:
+            if (starting_row + n_buttons) < self.n_rows and (starting_column + n_buttons) < self.n_columns:
+                for i, r in enumerate(range(starting_row, starting_row + n_buttons)):
+                    buttons.append(self.layout.itemAtPosition(r, starting_column + i).widget())
+        elif orientation == self.RISING_DIAGONAL_ORIENTATION:
+            if (starting_row - n_buttons) >= 0 and (starting_column + n_buttons) < self.n_columns:
+                for i, c in enumerate(range(starting_column, starting_column + n_buttons)):
+                    buttons.append(self.layout.itemAtPosition(starting_row - i, c).widget())
+        return buttons
+
+    def get_buttons_text(self, buttons):
+        logging.debug('getting buttons text done the buttons....')
+        if len(buttons) == 0:
+            return None
+        s = ''
+        for button in buttons:
+            s = s + button.text()
+        return s
+
+    def insert_text_in_buttons(self, text, buttons, mark_button=False):
+        for i, button in enumerate(buttons):
+            if mark_button:
+                button.setStyleSheet("background-color: " + "red")
+            button.setText(text[i])
+
     def hide_words(self, words, mark_word=False, enable_collisions=True):
         for word in words:
             self.hide_word(word, mark_word, enable_collisions)
@@ -266,44 +305,6 @@ class Buttons2DArrayWidget(QWidget):
         # if we are here is because there is not collision,
         # then we can hide the word in the place indicated by the parameters.
         self.insert_text_in_buttons(word_to_hide, buttons, mark_word)
-
-    def insert_text_in_buttons(self, text, buttons, mark_button=False):
-        mark = '' if not mark_button else '*'
-        for i, button in enumerate(buttons):
-            button.setText(text[i] + mark)
-
-    def get_buttons(self, starting_row, starting_column, orientation, n_buttons):
-        logging.debug('getting buttons giving parameters: n_buttons = %s, '
-                      'orientation = %s, '
-                      'starting_row = %s, '
-                      'starting_column = %s, ', n_buttons, orientation, starting_row, starting_column)
-        buttons = []
-        if orientation == self.ROW_ORIENTATION:
-            if (starting_column + n_buttons) < self.n_columns:
-                for c in range(starting_column, starting_column + n_buttons):
-                    buttons.append(self.layout.itemAtPosition(starting_row, c).widget())
-        elif orientation == self.COLUMN_ORIENTATION:
-            if (starting_row + n_buttons) < self.n_rows:
-                for r in range(starting_row, starting_row + n_buttons):
-                    buttons.append(self.layout.itemAtPosition(r, starting_column).widget())
-        elif orientation == self.FALLING_DIAGONAL_ORIENTATION:
-            if (starting_row + n_buttons) < self.n_rows and (starting_column + n_buttons) < self.n_columns:
-                for i, r in enumerate(range(starting_row, starting_row + n_buttons)):
-                    buttons.append(self.layout.itemAtPosition(r, starting_column + i).widget())
-        elif orientation == self.RISING_DIAGONAL_ORIENTATION:
-            if (starting_row - n_buttons) >= 0 and (starting_column + n_buttons) < self.n_columns:
-                for i, c in enumerate(range(starting_column, starting_column + n_buttons)):
-                    buttons.append(self.layout.itemAtPosition(starting_row - i, c).widget())
-        return buttons
-
-    def get_buttons_text(self, buttons):
-        logging.debug('getting buttons text done the buttons....')
-        if len(buttons) == 0:
-            return None
-        s = ''
-        for button in buttons:
-            s = s + button.text()
-        return s
 
     def __str__(self):
         r = ''
