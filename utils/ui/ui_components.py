@@ -84,8 +84,8 @@ class Buttons2DArrayWidget(QWidget):
     FALLING_DIAGONAL_ORIENTATION = 'FALLING_DIAGONAL_ORIENTATION'
 
     def __init__(self, parent=None, n_rows=15, n_columns=15, buttons_w=30, buttons_h=30):
-
         super().__init__(parent)
+        self.empty_cell_character = '*'
         self.n_rows = n_rows
         self.n_columns = n_columns
         self.selected_buttons = SortedList()
@@ -93,13 +93,13 @@ class Buttons2DArrayWidget(QWidget):
         self.layout.setSpacing(0)
         for r in range(self.n_rows):
             for c in range(self.n_columns):
-                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, '*')
+                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, self.empty_cell_character)
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
-        # self.random_populate_all_buttons(overwrite=True)
         words_to_hide = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
-        self.hide_words(words_to_hide, True)
+        self.hide_words(words_to_hide, False)
+        self.random_populate_all_buttons(overwrite=False)
 
     def enable_all_buttons(self, enable):
         for r in range(self.n_rows):
@@ -223,14 +223,14 @@ class Buttons2DArrayWidget(QWidget):
         for r in range(self.n_rows):
             for c in range(self.n_columns):
                 button = self.layout.itemAtPosition(r, c).widget()
-                if len(button.text()) == 0 or overwrite:
-                    self.layout.itemAtPosition(r, c).widget().setText(random.sample(alphabet, 1)[0])
+                if button.text() == self.empty_cell_character or overwrite:
+                    self.layout.itemAtPosition(r, c).widget().setText(random.choice(alphabet))
 
-    def hide_words(self, words, enable_collisions=True):
+    def hide_words(self, words, mark_word=False, enable_collisions=True):
         for word in words:
-            self.hide_word(word, enable_collisions)
+            self.hide_word(word, mark_word, enable_collisions)
 
-    def hide_word(self, word_to_hide, enable_collisions=True):
+    def hide_word(self, word_to_hide, mark_word=False, enable_collisions=True):
         collision = True
         while collision:
             collision = False
@@ -265,11 +265,12 @@ class Buttons2DArrayWidget(QWidget):
                     break
         # if we are here is because there is not collision,
         # then we can hide the word in the place indicated by the parameters.
-        self.insert_text_in_buttons(word_to_hide, buttons)
+        self.insert_text_in_buttons(word_to_hide, buttons, mark_word)
 
-    def insert_text_in_buttons(self, text, buttons):
+    def insert_text_in_buttons(self, text, buttons, mark_button=False):
+        mark = '' if not mark_button else '*'
         for i, button in enumerate(buttons):
-            button.setText(text[i])
+            button.setText(text[i] + mark)
 
     def get_buttons(self, starting_row, starting_column, orientation, n_buttons):
         logging.debug('getting buttons giving parameters: n_buttons = %s, '
