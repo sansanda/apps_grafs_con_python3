@@ -26,7 +26,8 @@ class CellIn2DArray(QPushButton):
         self.background_color = ''
         self.text_color = ''
         self.selected = None
-
+        self.matched = None
+        self.set_matched(False)
         self.set_enable(True)
         self.set_selected(False)
 
@@ -35,6 +36,10 @@ class CellIn2DArray(QPushButton):
         if self.position_in_array < other.position_in_array:
             comp = True
         return comp
+
+    def set_matched(self, matched):
+        self.matched = matched
+        self.update_style()
 
     def set_enable(self, enable):
         self.setEnabled(enable)
@@ -46,7 +51,7 @@ class CellIn2DArray(QPushButton):
 
     def update_style(self):
         if self.isEnabled():
-            self.background_color = 'lightgreen' #lightgrey
+            self.background_color = 'lightgreen'  # lightgrey
             if self.selected:
                 self.background_color = 'lightgrey'
                 self.text_color = 'black'
@@ -56,7 +61,7 @@ class CellIn2DArray(QPushButton):
             if self.selected:
                 self.background_color = 'lightgrey'
                 self.text_color = 'black'
-        self.setStyleSheet("background-color: " + self.background_color + "; color: " + self.text_color)
+        self.setStyleSheet("font-weight: bold; background-color: " + self.background_color + "; color: " + self.text_color)
 
     def __str__(self) -> str:
         r = super().__str__() + ':\n'
@@ -75,7 +80,6 @@ class CellIn2DArray(QPushButton):
 
 
 class Buttons2DArrayWidget(QWidget):
-
     text_available = pyqtSignal(str)
 
     ALL_NEIGHBOURS = 'ALL'
@@ -102,6 +106,7 @@ class Buttons2DArrayWidget(QWidget):
         self.selectable_buttons = list()
         self.layout = QtWidgets.QGridLayout(self)
         self.layout.setSpacing(0)
+        parent.word_matched.connect(self.word_matched)
         for r in range(self.n_rows):
             for c in range(self.n_columns):
                 button = CellIn2DArray(self, r, c, buttons_w, buttons_h, self.empty_cell_character)
@@ -110,26 +115,52 @@ class Buttons2DArrayWidget(QWidget):
         self.setLayout(self.layout)
         # QtCore.QMetaObject.connectSlotsByName(parent)
 
+    def word_matched(self):
+        logging.info('Received signal word_matched from WordsSearchForm')
+        self.enable_buttons(self.selected_buttons[:], enable=False)
+        self.select_buttons(self.selected_buttons[:], select=False)
+        self.selected_buttons = SortedList()
+
     def clicked_event_handler(self, clicked_button):
         logging.debug("clicked_event_handler(self, clicked_button): clicked_button = %s", clicked_button)
         if clicked_button.selected:
             clicked_button.set_selected(False)
             self.selected_buttons.remove(clicked_button)
+            if len(self.selected_buttons) > 0:
+                self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
+                self.enable_buttons(self.selected_buttons[1:-1], enable=False)
+                self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
         else:
-            clicked_button.set_selected(True)
-            self.selected_buttons.add(clicked_button)
-        self.enable_buttons(buttons='all', enable=False)
-        # self.select_buttons(buttons='all', select=False)
-        if len(self.selected_buttons) > 0:
-            self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
-        self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+            if len(self.selected_buttons) == 0:
+                clicked_button.set_selected(True)
+                self.selected_buttons.add(clicked_button)
+                self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
+                self.enable_buttons(self.selected_buttons[1:-1], enable=False)
+                self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+            else:
+                if clicked_button not in self.get_next_selectable_buttons():
+                    self.select_buttons(self.selected_buttons[:], select=False)
+                    self.enable_buttons(self.selected_buttons[:], enable=True)
+                    self.selected_buttons = SortedList()
+                    clicked_button.set_selected(True)
+                    self.selected_buttons.add(clicked_button)
+                    self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
+                    self.enable_buttons(self.selected_buttons[1:-1], enable=False)
+                    self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+                else:
+                    clicked_button.set_selected(True)
+                    self.selected_buttons.add(clicked_button)
+                    self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
+                    self.enable_buttons(self.selected_buttons[1:-1], enable=False)
+                    self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+
         txt = self.get_buttons_text(self.selected_buttons)
         logging.debug("clicked_event_handler(self, clicked_button): "
-                      "emitting text available signal(txt) with txt = %s", txt)
+                      "emitting text available signal('%s')", txt)
         self.text_available.emit(txt)
 
     def enable_buttons(self, buttons='all', enable=True):
-        if buttons == None:
+        if buttons is None:
             return
         if type(buttons) is not list and type(buttons) is not str:
             return
@@ -144,7 +175,7 @@ class Buttons2DArrayWidget(QWidget):
                 self.layout.itemAtPosition(button.row, button.column).widget().set_enable(enable)
 
     def select_buttons(self, buttons='all', select=True):
-        if buttons == None:
+        if buttons is None:
             return
         if type(buttons) is not list and type(buttons) is not str:
             return

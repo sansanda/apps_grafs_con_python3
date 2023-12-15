@@ -20,7 +20,7 @@ class State(IntEnum):
     OVER = 4
 
 
-class WordsSearch(QtWidgets.QWidget):
+class WordsSearchForm(QtWidgets.QWidget):
 
     word_matched = pyqtSignal()
 
@@ -56,10 +56,13 @@ class WordsSearch(QtWidgets.QWidget):
 
     def text_available_handler(self, text):
         logging.info("text received: %s", text)
-        if text in self.words_to_find or text[::] in self.words_to_find:
+        if text in self.words_to_find or text[::-1] in self.words_to_find:
+            self.found_words = self.found_words + 1
+            self.ui.found_words_label.setText('Words Found: ' + str(self.found_words))
+            self.ui.words_to_find_label.setText('Words to Find: ' + str(len(self.words_to_find)-self.found_words))
             logging.info("emitting signal word matched: %s", text)
             self.word_matched.emit()
-
+            self._check_finish()
 
     def start_pause_handler(self):
         # game running
@@ -174,11 +177,11 @@ if __name__ == "__main__":
 
     logging.info("Main    : creating main....")
     app = QApplication(sys.argv)
-    myapp = WordsSearch(words_to_find,
-                        play_time,
-                        interval,
-                        n_rows,
-                        n_columns,
-                        None)
+    myapp = WordsSearchForm(words_to_find,
+                            play_time,
+                            interval,
+                            n_rows,
+                            n_columns,
+                            None)
     myapp.show()
     sys.exit(app.exec_())
