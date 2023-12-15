@@ -89,6 +89,7 @@ class Ui_Words_Search_Form(object):
         self.reset_game_pushButton.setText(_translate("Words_Search_Form", "Reset"))
 
     def ui_init_status(self, remaining_time, words_to_find, found_words):
+        self.buttons_array.init_array()
         self.start_pause_pushButton.setText("Start")
         self.remaining_time_label.setText("Remaining Time: " + str(remaining_time))
         self.found_words_label.setText("Words Found: " + str(found_words))

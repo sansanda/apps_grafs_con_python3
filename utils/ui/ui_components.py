@@ -26,8 +26,6 @@ class CellIn2DArray(QPushButton):
         self.background_color = ''
         self.text_color = ''
         self.selected = None
-        self.matched = None
-        self.set_matched(False)
         self.set_enable(True)
         self.set_selected(False)
 
@@ -36,10 +34,6 @@ class CellIn2DArray(QPushButton):
         if self.position_in_array < other.position_in_array:
             comp = True
         return comp
-
-    def set_matched(self, matched):
-        self.matched = matched
-        self.update_style()
 
     def set_enable(self, enable):
         self.setEnabled(enable)
@@ -158,6 +152,13 @@ class Buttons2DArrayWidget(QWidget):
         logging.debug("clicked_event_handler(self, clicked_button): "
                       "emitting text available signal('%s')", txt)
         self.text_available.emit(txt)
+
+    def init_array(self):
+        self.selected_buttons = SortedList()
+        self.selectable_buttons = list()
+        self.enable_buttons(buttons='all', enable=False)
+        self.select_buttons(buttons='all', select=False)
+        self.initialize_buttons_text(text=self.empty_cell_character)
 
     def enable_buttons(self, buttons='all', enable=True):
         if buttons is None:
@@ -327,6 +328,25 @@ class Buttons2DArrayWidget(QWidget):
             if mark_button:
                 button.setStyleSheet("background-color: " + "red")
             button.setText(text[i])
+
+    def initialize_buttons_text(self, text='*', buttons='all', mark_button=False):
+        if buttons is None:
+            return
+        if type(buttons) is not list and type(buttons) is not str:
+            return
+        if type(buttons) is list and len(buttons) == 0:
+            return
+        if type(buttons) is str and buttons.upper() == 'ALL':
+            for r in range(self.n_rows):
+                for c in range(self.n_columns):
+                    if mark_button:
+                        self.layout.itemAtPosition(r, c).widget().setStyleSheet("background-color: " + "red")
+                    self.layout.itemAtPosition(r, c).widget().setText(text)
+        else:
+            for button in buttons:
+                if mark_button:
+                    button.setStyleSheet("background-color: " + "red")
+                button.setText(text)
 
     def hide_words(self, words, mark_word=False, enable_collisions=True):
         for word in words:
