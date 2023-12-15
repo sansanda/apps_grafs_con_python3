@@ -21,9 +21,8 @@ class State(IntEnum):
 
 
 class WordsSearch(QtWidgets.QWidget):
-    """
-    interval: interval in msseconds
-    """
+
+    word_matched = pyqtSignal()
 
     def __init__(self,
                  words_to_find,
@@ -46,13 +45,21 @@ class WordsSearch(QtWidgets.QWidget):
         # # Signals and Slots
         self.ui.start_pause_pushButton.clicked.connect(self.start_pause_handler)
         self.ui.reset_game_pushButton.clicked.connect(self.reset)
+        self.ui.buttons_array.text_available.connect(self.text_available_handler)
 
         self.timerTickerWorker = None
         self.timer_worker_thread = None
 
         self.status = State.INITIATED
-        self._updateUi()
+        self._update_ui()
         logging.info("Words_Search    : Initiated.")
+
+    def text_available_handler(self, text):
+        logging.info("text received: %s", text)
+        if text in self.words_to_find or text[::] in self.words_to_find:
+            logging.info("emitting signal word matched: %s", text)
+            self.word_matched.emit()
+
 
     def start_pause_handler(self):
         # game running
@@ -75,15 +82,15 @@ class WordsSearch(QtWidgets.QWidget):
             self.timer_worker_thread.start()
             logging.info("WordsMatchingWidget    : Timer thread created.")
             self.status = State.RUNNING
-            self._updateUi()
+            self._update_ui()
             self.timerTickerWorker.run()
         elif self.status == State.RUNNING:
             self.status = State.PAUSED
-            self._updateUi()
+            self._update_ui()
             self.timerTickerWorker.pause()
         elif self.status == State.PAUSED:
             self.status = State.RUNNING
-            self._updateUi()
+            self._update_ui()
             self.timerTickerWorker.run()
 
     def pause(self):
@@ -91,7 +98,7 @@ class WordsSearch(QtWidgets.QWidget):
         logging.info("Words_Search    : Pausing.")
         self.timerTickerWorker.pause()
         self.status = State.PAUSED
-        self._updateUi()
+        self._update_ui()
         logging.info("Words_Search    : Paused.")
 
     def reset(self):
@@ -102,16 +109,16 @@ class WordsSearch(QtWidgets.QWidget):
         self.timerTickerWorker = None
         self.found_words = 0
         self.remaining_time = self.play_time
-        self._updateUi()
+        self._update_ui()
         logging.info("Words_Search    : Initiated.")
 
     def over(self):
         logging.info("Words_Search    : Game is over.")
         self.timerTickerWorker.pause()
         self.status = State.OVER
-        self._updateUi()
+        self._update_ui()
 
-    def _checkFinish(self):
+    def _check_finish(self):
         if int(self.remaining_time) > 0:
             if self.found_words == len(self.words_to_find):
                 self.over()
@@ -132,12 +139,12 @@ class WordsSearch(QtWidgets.QWidget):
 
     # UI updating
     def update_ramaining_time(self):
-        logging.info("Updating remaining time...")
+        logging.debug("Updating remaining time...")
         self.remaining_time = self.remaining_time - 1
         self.ui.remaining_time_label.setText("Remaining Time: " + str(self.remaining_time))
-        self._checkFinish()
+        self._check_finish()
 
-    def _updateUi(self):
+    def _update_ui(self):
         if self.status == State.INITIATED:
             self.ui.ui_init_status(self.remaining_time, len(self.words_to_find), self.found_words)
         if self.status == State.RUNNING:
