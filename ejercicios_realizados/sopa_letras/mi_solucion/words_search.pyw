@@ -169,7 +169,7 @@ if __name__ == "__main__":
     _format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=_format, level=logging.INFO,
                         datefmt="%H:%M:%S")
-    play_time = 120  # seconds
+    play_time = 240  # seconds
     interval = 1000  # ms
     words_to_find = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
     n_columns = 15
