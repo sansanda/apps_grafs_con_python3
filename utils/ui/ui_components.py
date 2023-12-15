@@ -3,7 +3,8 @@ import string
 from enum import IntFlag, auto
 from time import sleep
 
-from PyQt5 import QtWidgets, Qt
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
 from sortedcontainers import SortedList
 
@@ -23,6 +24,7 @@ class CellIn2DArray(QPushButton):
         self.position_in_array = self.row * 100 + self.column
         self.setFixedSize(width, height)
         self.background_color = ''
+        self.text_color = ''
         self.selected = None
 
         self.set_enable(True)
@@ -44,14 +46,17 @@ class CellIn2DArray(QPushButton):
 
     def update_background_color(self):
         if self.isEnabled():
-            self.background_color = 'lightgreen'
+            self.background_color = 'orange' #lightgrey
             if self.selected:
-                self.background_color = 'orange'
+                self.background_color = 'lightgrey'
+                self.text_color = 'black'
         else:
-            self.background_color = 'lightgrey'
+            self.background_color = 'darkgrey'
+            self.text_color = 'black'
             if self.selected:
-                self.background_color = 'lime'
-        self.setStyleSheet("background-color: " + self.background_color)
+                self.background_color = 'lightgrey'
+                self.text_color = 'black'
+        self.setStyleSheet("background-color: " + self.background_color + "; color: " + self.text_color)
 
     def __str__(self) -> str:
         r = super().__str__() + ':\n'
@@ -68,6 +73,9 @@ class CellIn2DArray(QPushButton):
 
 
 class Buttons2DArrayWidget(QWidget):
+
+    text_available = pyqtSignal(str)
+
     ALL_NEIGHBOURS = 'ALL'
     COLUMN_NEIGHBOURS = 'COLUMN_NEIGHBOURS'
     ROW_NEIGHBOURS = 'ROW_NEIGHBOURS'
@@ -89,6 +97,7 @@ class Buttons2DArrayWidget(QWidget):
         self.n_rows = n_rows
         self.n_columns = n_columns
         self.selected_buttons = SortedList()
+        self.selectable_buttons = list()
         self.layout = QtWidgets.QGridLayout(self)
         self.layout.setSpacing(0)
         for r in range(self.n_rows):
@@ -97,23 +106,53 @@ class Buttons2DArrayWidget(QWidget):
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
+        # QtCore.QMetaObject.connectSlotsByName(parent)
 
     def clicked_event_handler(self, clicked_button):
+        print(clicked_button)
         if clicked_button.selected:
+            clicked_button.set_selected(False)
             self.selected_buttons.remove(clicked_button)
         else:
+            clicked_button.set_selected(True)
             self.selected_buttons.add(clicked_button)
-        self.show_next_selectable_buttons()
+        self.enable_buttons(buttons='all', enable=False)
+        self.select_buttons(buttons='all', select=False)
+        self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
+        # self.enable_buttons(buttons=self.selected_buttons[1:-1], enable=False)
+        self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+        txt = self.get_buttons_text(self.selected_buttons)
+        self.text_available.emit(txt)
 
-    def enable_all_buttons(self, enable):
-        for r in range(self.n_rows):
-            for c in range(self.n_columns):
-                self.layout.itemAtPosition(r, c).widget().set_enable(enable)
+    def enable_buttons(self, buttons='all', enable=True):
+        if buttons == None:
+            return
+        if type(buttons) is not list and type(buttons) is not str:
+            return
+        if type(buttons) is list and len(buttons) == 0:
+            return
+        if type(buttons) is str and buttons.upper() == 'ALL':
+            for r in range(self.n_rows):
+                for c in range(self.n_columns):
+                    self.layout.itemAtPosition(r, c).widget().set_enable(enable)
+        else:
+            for button in buttons:
+                self.layout.itemAtPosition(button.row, button.column).widget().set_enable(enable)
 
-    def select_all_buttons(self, select):
-        for r in range(self.n_rows):
-            for c in range(self.n_columns):
-                self.layout.itemAtPosition(r, c).widget().set_selected(select)
+    def select_buttons(self, buttons='all', select=True):
+        if buttons == None:
+            return
+        if type(buttons) is not list and type(buttons) is not str:
+            return
+        if type(buttons) is list and len(buttons) == 0:
+            return
+        if type(buttons) is str and buttons.upper() == 'ALL':
+            for r in range(self.n_rows):
+                for c in range(self.n_columns):
+                    self.layout.itemAtPosition(r, c).widget().set_selected(select)
+        else:
+            for button in buttons:
+                self.layout.itemAtPosition(button.row, button.column).widget().set_selected(select)
 
     def get_button_neighbours(self, button: CellIn2DArray, which_neighbours: str):
         # logging.info('looking for the neighbours of the button: %s', str(cell))
@@ -121,7 +160,7 @@ class Buttons2DArrayWidget(QWidget):
         if which_neighbours not in self.valid_cell_neighbours:
             raise Exception("Not valid value for neighbours\n. Valid types are:  %s", self.valid_cell_neighbours)
         item = self.layout.itemAtPosition(button.row, button.column).widget()
-        # logging.debug('cell getted in layout at pos (%s,%s) = %s ', cell.row, cell.column, str(item))
+        # logging.debug('cell got in layout at pos (%s,%s) = %s ', cell.row, cell.column, str(item))
         if button != item:
             raise Exception("Cell not found in GridLayout.\n")
         neighbours = SortedList()
@@ -156,44 +195,31 @@ class Buttons2DArrayWidget(QWidget):
                 neighbours.add(n)
         return neighbours
 
-    def show_next_selectable_buttons(self):
+    def get_next_selectable_buttons(self):
         """
-        Show possible next selectable buttons in function of which pattern define the selected buttons.
+        return a list with the possible next selectable buttons in function of which pattern define the selected buttons.
         Patterns:\n
         0. no buttons selected
         1. single button selected
         2. selected buttons defining a row
         3. selected buttons defining a column
         4. selected buttons defining a diagonal which can be rising or falling
-        :return: None
+        :return: list with the possible selectable buttons
         """
-        # no buttons selected
+        selectable_buttons = list()
         if len(self.selected_buttons) == 0:
-            # enable all buttons and set all unselected
-            self.enable_all_buttons(True)
-            self.select_all_buttons(False)
-        # single button pattern
+            # no buttons selected pattern
+            for r in range(self.n_rows):
+                for c in range(self.n_columns):
+                    selectable_buttons.append(self.layout.itemAtPosition(r, c).widget())
         if len(self.selected_buttons) == 1:
+            # single button selected pattern
             # disable a deselect all buttons
-            self.enable_all_buttons(False)
-            self.select_all_buttons(False)
-            self.selected_buttons[0].set_enable(True)
-            self.selected_buttons[0].set_selected(True)
             nbs = self.get_button_neighbours(self.selected_buttons[0], self.ALL_NEIGHBOURS)
             for n in nbs:
-                n.set_enable(True)
-        # two buttons selected than can define: row, column or diagonal
+                selectable_buttons.append(n)
         if len(self.selected_buttons) >= 2:
-            self.enable_all_buttons(False)
-            self.select_all_buttons(False)
-            # disable all buttons except the first and the last selected
-            for i, b in enumerate(self.selected_buttons):
-                if i == 0 or i == (len(self.selected_buttons) - 1):
-                    b.set_selected(True)
-                    b.set_enable(True)
-                else:
-                    b.set_selected(True)
-                    b.set_enable(False)
+            # two buttons selected pattern than can define: row, column or diagonal
             delta_r = self.selected_buttons[0].row - self.selected_buttons[-1].row
             delta_c = self.selected_buttons[0].column - self.selected_buttons[-1].column
             logging.debug('delta_r, delta_c = %s, %s', delta_r, delta_c)
@@ -210,8 +236,71 @@ class Buttons2DArrayWidget(QWidget):
             elif delta_c < 0:
                 # falling diagonal pattern
                 extrem_neighbours_to_enable = self.FALLING_DIAGONAL_NEIGHBOURS
-            self.get_button_neighbours(self.selected_buttons[0], extrem_neighbours_to_enable)[0].set_enable(True)
-            self.get_button_neighbours(self.selected_buttons[-1], extrem_neighbours_to_enable)[1].set_enable(True)
+            selectable_buttons.append(self.get_button_neighbours(self.selected_buttons[0], extrem_neighbours_to_enable)[0])
+            selectable_buttons.append(self.get_button_neighbours(self.selected_buttons[-1], extrem_neighbours_to_enable)[1])
+        return selectable_buttons
+
+    def enable_next_selectable_buttons(self):
+        """
+        Show possible next selectable buttons in function of which pattern define the selected buttons.
+        Patterns:\n
+        0. no buttons selected
+        1. single button selected
+        2. selected buttons defining a row
+        3. selected buttons defining a column
+        4. selected buttons defining a diagonal which can be rising or falling
+        :return: None
+        """
+        # # no buttons selected
+        # if len(self.selected_buttons) == 0:
+        #     # enable all buttons and set all unselected
+        #     self.enable_all_buttons(True)
+        #     self.select_all_buttons(False)
+        # # single button pattern
+        # if len(self.selected_buttons) == 1:
+        #     # disable a deselect all buttons
+        #     self.enable_all_buttons(False)
+        #     self.select_all_buttons(False)
+        #     self.selected_buttons[0].set_enable(True)
+        #     self.selected_buttons[0].set_selected(True)
+        #     nbs = self.get_button_neighbours(self.selected_buttons[0], self.ALL_NEIGHBOURS)
+        #     for n in nbs:
+        #         n.set_enable(True)
+        # # two buttons selected than can define: row, column or diagonal
+        # if len(self.selected_buttons) >= 2:
+        #     self.enable_all_buttons(False)
+        #     self.select_all_buttons(False)
+        #     # disable all buttons except the first and the last selected
+        #     for i, b in enumerate(self.selected_buttons):
+        #         if i == 0 or i == (len(self.selected_buttons) - 1):
+        #             b.set_selected(True)
+        #             b.set_enable(True)
+        #         else:
+        #             b.set_selected(True)
+        #             b.set_enable(False)
+        #     delta_r = self.selected_buttons[0].row - self.selected_buttons[-1].row
+        #     delta_c = self.selected_buttons[0].column - self.selected_buttons[-1].column
+        #     logging.debug('delta_r, delta_c = %s, %s', delta_r, delta_c)
+        #     extrem_neighbours_to_enable = None
+        #     if delta_r == 0:
+        #         # row pattern
+        #         extrem_neighbours_to_enable = self.ROW_NEIGHBOURS
+        #     elif delta_c == 0:
+        #         # column pattern
+        #         extrem_neighbours_to_enable = self.COLUMN_NEIGHBOURS
+        #     elif delta_c > 0:
+        #         # rising diagonal pattern
+        #         extrem_neighbours_to_enable = self.RISING_DIAGONAL_NEIGHBOURS
+        #     elif delta_c < 0:
+        #         # falling diagonal pattern
+        #         extrem_neighbours_to_enable = self.FALLING_DIAGONAL_NEIGHBOURS
+        #     self.get_button_neighbours(self.selected_buttons[0], extrem_neighbours_to_enable)[0].set_enable(True)
+        #     self.get_button_neighbours(self.selected_buttons[-1], extrem_neighbours_to_enable)[1].set_enable(True)
+
+        selectable_buttons = self.get_next_selectable_buttons()
+        print(selectable_buttons)
+        for sb in selectable_buttons:
+            sb.set_enable(True)
 
     def random_populate_all_buttons(self,
                                     alphabet=[s.upper() for s in string.ascii_lowercase],
