@@ -1,4 +1,5 @@
 import logging
+import random
 from enum import IntEnum
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
@@ -21,7 +22,6 @@ class State(IntEnum):
 
 
 class WordsSearchForm(QtWidgets.QWidget):
-
     word_matched = pyqtSignal()
 
     def __init__(self,
@@ -59,7 +59,7 @@ class WordsSearchForm(QtWidgets.QWidget):
         if text in self.words_to_find or text[::-1] in self.words_to_find:
             self.found_words = self.found_words + 1
             self.ui.found_words_label.setText('Words Found: ' + str(self.found_words))
-            self.ui.words_to_find_label.setText('Words to Find: ' + str(len(self.words_to_find)-self.found_words))
+            self.ui.words_to_find_label.setText('Words to Find: ' + str(len(self.words_to_find) - self.found_words))
             logging.info("emitting signal word matched: %s", text)
             self.word_matched.emit()
             self._check_finish()
@@ -171,7 +171,11 @@ if __name__ == "__main__":
                         datefmt="%H:%M:%S")
     play_time = 240  # seconds
     interval = 1000  # ms
-    words_to_find = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
+    words = ['MANGO', 'GRAPE', 'APRICOT', 'AVOCADO', 'BLACKBERRY',
+              'BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY',
+              'WATERMELON', 'COCONOUT', 'KIWI', 'LEMON', 'PINEAPPLE',
+              'FIG', 'PAPAYA', 'DATE', 'LIME', 'PEACH']
+    words_to_find = random.sample(words, 8)
     n_columns = 15
     n_rows = 15
 

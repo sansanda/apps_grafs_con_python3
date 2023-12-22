@@ -25,7 +25,10 @@ class CellIn2DArray(QPushButton):
         self.setFixedSize(width, height)
         self.background_color = ''
         self.text_color = ''
+        self.marked = None
         self.selected = None
+        self.blocked = None
+        self.set_blocked(False)
         self.set_enable(True)
         self.set_selected(False)
 
@@ -35,9 +38,18 @@ class CellIn2DArray(QPushButton):
             comp = True
         return comp
 
-    def set_enable(self, enable):
-        self.setEnabled(enable)
+    def set_marked(self, marked):
+        self.marked = marked
         self.update_style()
+
+    def set_blocked(self, blocked):
+        self.blocked = blocked
+        self.update_style()
+
+    def set_enable(self, enable):
+        if not self.blocked:
+            self.setEnabled(enable)
+            self.update_style()
 
     def set_selected(self, selected):
         self.selected = selected
@@ -46,15 +58,22 @@ class CellIn2DArray(QPushButton):
     def update_style(self):
         if self.isEnabled():
             self.background_color = 'lightgreen'  # lightgrey
+            if self.marked:
+                self.background_color = 'orange'
             if self.selected:
                 self.background_color = 'lightgrey'
                 self.text_color = 'black'
+                if self.marked:
+                    self.background_color = 'red'
         else:
             self.background_color = 'darkgrey'
             self.text_color = 'black'
             if self.selected:
                 self.background_color = 'lightgrey'
                 self.text_color = 'black'
+                if self.marked:
+                    self.background_color = 'red'
+
         self.setStyleSheet("font-weight: bold; background-color: " + self.background_color + "; color: " + self.text_color)
 
     def __str__(self) -> str:
@@ -113,6 +132,7 @@ class Buttons2DArrayWidget(QWidget):
         logging.info('Received signal word_matched from WordsSearchForm')
         self.enable_buttons(self.selected_buttons[:], enable=False)
         self.select_buttons(self.selected_buttons[:], select=False)
+        self.block_buttons(self.selected_buttons[:], block=True)
         self.selected_buttons = SortedList()
 
     def clicked_event_handler(self, clicked_button):
@@ -156,9 +176,41 @@ class Buttons2DArrayWidget(QWidget):
     def init_array(self):
         self.selected_buttons = SortedList()
         self.selectable_buttons = list()
+        self.block_buttons(buttons='all', block=False)
         self.enable_buttons(buttons='all', enable=False)
         self.select_buttons(buttons='all', select=False)
+        self.mark_buttons(buttons='all', mark=False)
         self.initialize_buttons_text(text=self.empty_cell_character)
+
+    def mark_buttons(self, buttons='all', mark=True):
+        if buttons is None:
+            return
+        if type(buttons) is not list and type(buttons) is not str:
+            return
+        if type(buttons) is list and len(buttons) == 0:
+            return
+        if type(buttons) is str and buttons.upper() == 'ALL':
+            for r in range(self.n_rows):
+                for c in range(self.n_columns):
+                    self.layout.itemAtPosition(r, c).widget().set_marked(mark)
+        else:
+            for button in buttons:
+                self.layout.itemAtPosition(button.row, button.column).widget().set_marked(mark)
+
+    def block_buttons(self, buttons='all', block=True):
+        if buttons is None:
+            return
+        if type(buttons) is not list and type(buttons) is not str:
+            return
+        if type(buttons) is list and len(buttons) == 0:
+            return
+        if type(buttons) is str and buttons.upper() == 'ALL':
+            for r in range(self.n_rows):
+                for c in range(self.n_columns):
+                    self.layout.itemAtPosition(r, c).widget().set_blocked(block)
+        else:
+            for button in buttons:
+                self.layout.itemAtPosition(button.row, button.column).widget().set_blocked(block)
 
     def enable_buttons(self, buttons='all', enable=True):
         if buttons is None:
@@ -189,6 +241,16 @@ class Buttons2DArrayWidget(QWidget):
         else:
             for button in buttons:
                 self.layout.itemAtPosition(button.row, button.column).widget().set_selected(select)
+
+    def set_buttons_as(self, option, set):
+        if option=='mark':
+            pass
+        elif option=='select':
+            pass
+        elif option=='block':
+            pass
+        elif option=='enable':
+            pass
 
     def get_button_neighbours(self, button: CellIn2DArray, which_neighbours: str):
         # logging.info('looking for the neighbours of the button: %s', str(cell))
@@ -326,7 +388,7 @@ class Buttons2DArrayWidget(QWidget):
     def insert_text_in_buttons(self, text, buttons, mark_button=False):
         for i, button in enumerate(buttons):
             if mark_button:
-                button.setStyleSheet("background-color: " + "red")
+                button.set_marked(True)
             button.setText(text[i])
 
     def initialize_buttons_text(self, text='*', buttons='all', mark_button=False):
@@ -340,12 +402,12 @@ class Buttons2DArrayWidget(QWidget):
             for r in range(self.n_rows):
                 for c in range(self.n_columns):
                     if mark_button:
-                        self.layout.itemAtPosition(r, c).widget().setStyleSheet("background-color: " + "red")
+                        self.layout.itemAtPosition(r, c).widget().set_marked(True)
                     self.layout.itemAtPosition(r, c).widget().setText(text)
         else:
             for button in buttons:
                 if mark_button:
-                    button.setStyleSheet("background-color: " + "red")
+                    button.set_marked(True)
                 button.setText(text)
 
     def hide_words(self, words, mark_word=False, enable_collisions=True):
@@ -353,6 +415,8 @@ class Buttons2DArrayWidget(QWidget):
             self.hide_word(word, mark_word, enable_collisions)
 
     def hide_word(self, word_to_hide, mark_word=False, enable_collisions=True):
+        if len(word_to_hide)>self.n_rows or len(word_to_hide)>self.n_rows:
+            raise Exception("Word too much long!!!")
         collision = True
         while collision:
             collision = False
