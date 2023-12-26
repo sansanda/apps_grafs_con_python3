@@ -74,7 +74,8 @@ class CellIn2DArray(QPushButton):
                 if self.marked:
                     self.background_color = 'red'
 
-        self.setStyleSheet("font-weight: bold; background-color: " + self.background_color + "; color: " + self.text_color)
+        self.setStyleSheet(
+            "font-weight: bold; background-color: " + self.background_color + "; color: " + self.text_color)
 
     def __str__(self) -> str:
         r = super().__str__() + ':\n'
@@ -179,7 +180,7 @@ class Buttons2DArrayWidget(QWidget):
         self.block_buttons(buttons='all', block=False)
         self.enable_buttons(buttons='all', enable=False)
         self.select_buttons(buttons='all', select=False)
-        self.mark_buttons(buttons='all', mark=False)
+        self.config_buttons_as(buttons_to_config='all', option='mark', enable=False)
         self.initialize_buttons_text(text=self.empty_cell_character)
 
     def mark_buttons(self, buttons='all', mark=True):
@@ -242,15 +243,37 @@ class Buttons2DArrayWidget(QWidget):
             for button in buttons:
                 self.layout.itemAtPosition(button.row, button.column).widget().set_selected(select)
 
-    def set_buttons_as(self, option, set):
-        if option=='mark':
-            pass
-        elif option=='select':
-            pass
-        elif option=='block':
-            pass
-        elif option=='enable':
-            pass
+    def config_buttons_as(self, buttons_to_config='all', option='select', enable=True):
+        _buttons_to_config = list()
+        if buttons_to_config is None:
+            return
+        if type(buttons_to_config) is not list and type(buttons_to_config) is not str:
+            return
+        if type(buttons_to_config) is list and len(buttons_to_config) == 0:
+            return
+        if type(buttons_to_config) is str and buttons_to_config.upper() == 'ALL':
+            for button in self.get_all_buttons():
+                _buttons_to_config.append(button)
+
+        if option == 'mark':
+            for button in _buttons_to_config:
+                button.set_marked(enable)
+        elif option == 'select':
+            for button in _buttons_to_config:
+                button.set_selected(enable)
+        elif option == 'block':
+            for button in _buttons_to_config:
+                button.set_blocked(enable)
+        elif option == 'enable':
+            for button in _buttons_to_config:
+                button.set_enable(enable)
+
+    def get_all_buttons(self):
+        buttons = list()
+        for r in range(self.n_rows):
+            for c in range(self.n_columns):
+                buttons.append(self.layout.itemAtPosition(r, c).widget())
+        return buttons
 
     def get_button_neighbours(self, button: CellIn2DArray, which_neighbours: str):
         # logging.info('looking for the neighbours of the button: %s', str(cell))
@@ -352,7 +375,7 @@ class Buttons2DArrayWidget(QWidget):
                 if button.text() == self.empty_cell_character or overwrite:
                     self.layout.itemAtPosition(r, c).widget().setText(random.choice(alphabet))
 
-    def get_buttons(self, starting_row, starting_column, orientation, n_buttons):
+    def get_buttons_line(self, starting_row, starting_column, orientation, n_buttons):
         logging.debug('getting buttons giving parameters: n_buttons = %s, '
                       'orientation = %s, '
                       'starting_row = %s, '
@@ -415,7 +438,7 @@ class Buttons2DArrayWidget(QWidget):
             self.hide_word(word, mark_word, enable_collisions)
 
     def hide_word(self, word_to_hide, mark_word=False, enable_collisions=True):
-        if len(word_to_hide)>self.n_rows or len(word_to_hide)>self.n_rows:
+        if len(word_to_hide) > self.n_rows or len(word_to_hide) > self.n_rows:
             raise Exception("Word too much long!!!")
         collision = True
         while collision:
@@ -438,7 +461,7 @@ class Buttons2DArrayWidget(QWidget):
                               'orientation = %s, '
                               'starting_row = %s, '
                               'starting_column = %s, ', reverse, orientation, starting_row, starting_column)
-                buttons = self.get_buttons(starting_row, starting_column, orientation, len(word_to_hide))
+                buttons = self.get_buttons_line(starting_row, starting_column, orientation, len(word_to_hide))
                 if len(buttons) == 0:
                     bad_parameters = True
             # detect collision
