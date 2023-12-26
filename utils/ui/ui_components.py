@@ -14,8 +14,9 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
 class CellIn2DArray(QPushButton):
+    EMPTY_CELL_CHARACTER = '*'
 
-    def __init__(self, parent=None, row=0, column=0, width=30, height=30, text='X') -> None:
+    def __init__(self, parent=None, row=0, column=0, width=30, height=30, text=EMPTY_CELL_CHARACTER) -> None:
         super().__init__(parent)
         self.setText(text)
         # zero based position inside a 2D array
@@ -84,8 +85,8 @@ class CellIn2DArray(QPushButton):
         r = r + '\trow, column = ' + str(self.row) + ',' + str(self.column) + '\n'
         r = r + '\tposition in array = ' + str(self.position_in_array) + '\n'
         r = r + '\twidth, height = ' + str(self.width()) + ',' + str(self.height()) + '\n'
-        r = (r + '\tenable, selected = ' +
-             str(self.isEnabled()) + ', ' + str(self.selected) + ', ' + '\n')
+        r = (r + '\tenable = ' + str(self.isEnabled()) + ', selected = ' + str(self.selected) +
+             ', blocked = ' + str(self.blocked) + ', marked = ' + str(self.marked))
         r = r + '\tbackground_color = ' + self.background_color + '\n'
         r = r + '\ttext = ' + self.text() + '\n'
 
@@ -113,7 +114,6 @@ class Buttons2DArrayWidget(QWidget):
 
     def __init__(self, parent=None, n_rows=15, n_columns=15, buttons_w=30, buttons_h=30):
         super().__init__(parent)
-        self.empty_cell_character = '*'
         self.n_rows = n_rows
         self.n_columns = n_columns
         self.selected_buttons = SortedList()
@@ -123,7 +123,8 @@ class Buttons2DArrayWidget(QWidget):
         parent.word_matched.connect(self.word_matched)
         for r in range(self.n_rows):
             for c in range(self.n_columns):
-                button = CellIn2DArray(self, r, c, buttons_w, buttons_h, self.empty_cell_character)
+                button = CellIn2DArray(self, r, c, buttons_w, buttons_h,
+                                       CellIn2DArray.EMPTY_CELL_CHARACTER)
                 button.clicked.connect(lambda foo_param, x=button: self.clicked_event_handler(x))
                 self.layout.addWidget(button, r, c)
         self.setLayout(self.layout)
@@ -131,9 +132,12 @@ class Buttons2DArrayWidget(QWidget):
 
     def word_matched(self):
         logging.info('Received signal word_matched from WordsSearchForm')
-        self.enable_buttons(self.selected_buttons[:], enable=False)
-        self.select_buttons(self.selected_buttons[:], select=False)
-        self.block_buttons(self.selected_buttons[:], block=True)
+        self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
+                               option='enable', enable=False)
+        self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
+                               option='select', enable=False)
+        self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
+                               option='block', enable=True)
         self.selected_buttons = SortedList()
 
     def clicked_event_handler(self, clicked_button):
@@ -142,33 +146,46 @@ class Buttons2DArrayWidget(QWidget):
             clicked_button.set_selected(False)
             self.selected_buttons.remove(clicked_button)
             if len(self.selected_buttons) > 0:
-                self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
-                self.enable_buttons(self.selected_buttons[1:-1], enable=False)
-                self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+                self.config_buttons_as(buttons_to_config=[self.selected_buttons[0], self.selected_buttons[-1]],
+                                       option='enable', enable=True)
+                self.config_buttons_as(buttons_to_config=self.selected_buttons[1:-1],
+                                       option='enable', enable=False)
+                self.config_buttons_as(buttons_to_config=self.get_next_selectable_buttons(),
+                                       option='enable', enable=True)
         else:
             if len(self.selected_buttons) == 0:
                 clicked_button.set_selected(True)
                 self.selected_buttons.add(clicked_button)
-                self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
-                self.enable_buttons(self.selected_buttons[1:-1], enable=False)
-                self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+                self.config_buttons_as(buttons_to_config=[self.selected_buttons[0], self.selected_buttons[-1]],
+                                       option='enable', enable=True)
+                self.config_buttons_as(buttons_to_config=self.selected_buttons[1:-1],
+                                       option='enable', enable=False)
+                self.config_buttons_as(buttons_to_config=self.get_next_selectable_buttons(),
+                                       option='enable', enable=True)
             else:
                 if clicked_button not in self.get_next_selectable_buttons():
-                    self.select_buttons(self.selected_buttons[:], select=False)
-                    self.enable_buttons(self.selected_buttons[:], enable=True)
+                    self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
+                                           option='select', enable=False)
+                    self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
+                                           option='enable', enable=True)
                     self.selected_buttons = SortedList()
                     clicked_button.set_selected(True)
                     self.selected_buttons.add(clicked_button)
-                    self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
-                    self.enable_buttons(self.selected_buttons[1:-1], enable=False)
-                    self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
+                    self.config_buttons_as(buttons_to_config=[self.selected_buttons[0], self.selected_buttons[-1]],
+                                           option='enable', enable=True)
+                    self.config_buttons_as(buttons_to_config=self.selected_buttons[1:-1],
+                                           option='enable', enable=False)
+                    self.config_buttons_as(buttons_to_config=self.get_next_selectable_buttons(),
+                                           option='enable', enable=True)
                 else:
                     clicked_button.set_selected(True)
                     self.selected_buttons.add(clicked_button)
-                    self.enable_buttons([self.selected_buttons[0], self.selected_buttons[-1]], enable=True)
-                    self.enable_buttons(self.selected_buttons[1:-1], enable=False)
-                    self.enable_buttons(self.get_next_selectable_buttons(), enable=True)
-
+                    self.config_buttons_as(buttons_to_config=[self.selected_buttons[0], self.selected_buttons[-1]],
+                                           option='enable', enable=True)
+                    self.config_buttons_as(buttons_to_config=self.selected_buttons[1:-1],
+                                           option='enable', enable=False)
+                    self.config_buttons_as(buttons_to_config=self.get_next_selectable_buttons(),
+                                           option='enable', enable=True)
         txt = self.get_buttons_text(self.selected_buttons)
         logging.debug("clicked_event_handler(self, clicked_button): "
                       "emitting text available signal('%s')", txt)
@@ -177,71 +194,11 @@ class Buttons2DArrayWidget(QWidget):
     def init_array(self):
         self.selected_buttons = SortedList()
         self.selectable_buttons = list()
-        self.block_buttons(buttons='all', block=False)
-        self.enable_buttons(buttons='all', enable=False)
-        self.select_buttons(buttons='all', select=False)
+        self.config_buttons_as(buttons_to_config='all', option='block', enable=False)
+        self.config_buttons_as(buttons_to_config='all', option='enable', enable=False)
+        self.config_buttons_as(buttons_to_config='all', option='select', enable=False)
         self.config_buttons_as(buttons_to_config='all', option='mark', enable=False)
-        self.initialize_buttons_text(text=self.empty_cell_character)
-
-    def mark_buttons(self, buttons='all', mark=True):
-        if buttons is None:
-            return
-        if type(buttons) is not list and type(buttons) is not str:
-            return
-        if type(buttons) is list and len(buttons) == 0:
-            return
-        if type(buttons) is str and buttons.upper() == 'ALL':
-            for r in range(self.n_rows):
-                for c in range(self.n_columns):
-                    self.layout.itemAtPosition(r, c).widget().set_marked(mark)
-        else:
-            for button in buttons:
-                self.layout.itemAtPosition(button.row, button.column).widget().set_marked(mark)
-
-    def block_buttons(self, buttons='all', block=True):
-        if buttons is None:
-            return
-        if type(buttons) is not list and type(buttons) is not str:
-            return
-        if type(buttons) is list and len(buttons) == 0:
-            return
-        if type(buttons) is str and buttons.upper() == 'ALL':
-            for r in range(self.n_rows):
-                for c in range(self.n_columns):
-                    self.layout.itemAtPosition(r, c).widget().set_blocked(block)
-        else:
-            for button in buttons:
-                self.layout.itemAtPosition(button.row, button.column).widget().set_blocked(block)
-
-    def enable_buttons(self, buttons='all', enable=True):
-        if buttons is None:
-            return
-        if type(buttons) is not list and type(buttons) is not str:
-            return
-        if type(buttons) is list and len(buttons) == 0:
-            return
-        if type(buttons) is str and buttons.upper() == 'ALL':
-            for r in range(self.n_rows):
-                for c in range(self.n_columns):
-                    self.layout.itemAtPosition(r, c).widget().set_enable(enable)
-        else:
-            for button in buttons:
-                self.layout.itemAtPosition(button.row, button.column).widget().set_enable(enable)
-
-    def select_buttons(self, buttons='all', select=True):
-        if buttons is None:
-            return
-        if type(buttons) is not list and type(buttons) is not str:
-            return
-        if type(buttons) is list and len(buttons) == 0:
-            return
-        if type(buttons) is str and buttons.upper() == 'ALL':
-            for r in range(self.n_rows):
-                for c in range(self.n_columns):
-                    self.layout.itemAtPosition(r, c).widget().set_selected(select)
-        else:
-            for button in buttons:
-                self.layout.itemAtPosition(button.row, button.column).widget().set_selected(select)
+        self.initialize_buttons_text(text=CellIn2DArray.EMPTY_CELL_CHARACTER)
 
     def config_buttons_as(self, buttons_to_config='all', option='select', enable=True):
         _buttons_to_config = list()
@@ -253,6 +210,9 @@ class Buttons2DArrayWidget(QWidget):
             return
         if type(buttons_to_config) is str and buttons_to_config.upper() == 'ALL':
             for button in self.get_all_buttons():
+                _buttons_to_config.append(button)
+        else:
+            for button in buttons_to_config:
                 _buttons_to_config.append(button)
 
         if option == 'mark':
@@ -372,7 +332,7 @@ class Buttons2DArrayWidget(QWidget):
         for r in range(self.n_rows):
             for c in range(self.n_columns):
                 button = self.layout.itemAtPosition(r, c).widget()
-                if button.text() == self.empty_cell_character or overwrite:
+                if button.text() == CellIn2DArray.EMPTY_CELL_CHARACTER or overwrite:
                     self.layout.itemAtPosition(r, c).widget().setText(random.choice(alphabet))
 
     def get_buttons_line(self, starting_row, starting_column, orientation, n_buttons):
@@ -414,7 +374,7 @@ class Buttons2DArrayWidget(QWidget):
                 button.set_marked(True)
             button.setText(text[i])
 
-    def initialize_buttons_text(self, text='*', buttons='all', mark_button=False):
+    def initialize_buttons_text(self, text=CellIn2DArray.EMPTY_CELL_CHARACTER, buttons='all', mark_button=False):
         if buttons is None:
             return
         if type(buttons) is not list and type(buttons) is not str:

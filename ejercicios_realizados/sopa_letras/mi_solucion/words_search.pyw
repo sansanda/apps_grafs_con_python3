@@ -25,7 +25,8 @@ class WordsSearchForm(QtWidgets.QWidget):
     word_matched = pyqtSignal()
 
     def __init__(self,
-                 words_to_find,
+                 available_words,
+                 n_words_to_find,
                  play_time=60,
                  interval=1000,
                  n_rows=15,
@@ -34,14 +35,16 @@ class WordsSearchForm(QtWidgets.QWidget):
 
         QtWidgets.QWidget.__init__(self)
         logging.info("Words_Search    : Initiating....")
-        self.words_to_find = words_to_find
+        self.words_to_find = list()
+        self.available_words = available_words
+        self.n_words_to_find = n_words_to_find
         self.found_words = 0
         self.play_time = play_time
         self.interval = interval
         self.remaining_time = self.play_time
         self.ui = Ui_Words_Search_Form()
         self.ui.setupUi(self, n_rows, n_columns)
-        self.ui.buttons_array.enable_buttons(buttons='all', enable=False)
+        self.ui.buttons_array.config_buttons_as(buttons_to_config='all', option='enable', enable=False)
         # # Signals and Slots
         self.ui.start_pause_pushButton.clicked.connect(self.start_pause_handler)
         self.ui.reset_game_pushButton.clicked.connect(self.reset)
@@ -67,9 +70,10 @@ class WordsSearchForm(QtWidgets.QWidget):
     def start_pause_handler(self):
         # game running
         if self.status == State.INITIATED:
-            self.ui.buttons_array.hide_words(words_to_find, mark_word=False)
+            self.words_to_find = random.sample(self.available_words, self.n_words_to_find)
+            self.ui.buttons_array.hide_words(self.words_to_find, mark_word=False)
             self.ui.buttons_array.random_populate_all_buttons(overwrite=False)
-            self.ui.buttons_array.enable_buttons(buttons='all', enable=True)
+            self.ui.buttons_array.config_buttons_as(buttons_to_config='all', option='enable', enable=True)
             # Step 2: Create a QThread object for managing timer
             logging.info("Words_Search    : Creating the timer thread...")
             self.timer_worker_thread = QThread()
@@ -171,17 +175,18 @@ if __name__ == "__main__":
                         datefmt="%H:%M:%S")
     play_time = 240  # seconds
     interval = 1000  # ms
-    words = ['MANGO', 'GRAPE', 'APRICOT', 'AVOCADO', 'BLACKBERRY',
+    available_words = ['MANGO', 'GRAPE', 'APRICOT', 'AVOCADO', 'BLACKBERRY',
               'BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY',
               'WATERMELON', 'COCONOUT', 'KIWI', 'LEMON', 'PINEAPPLE',
               'FIG', 'PAPAYA', 'DATE', 'LIME', 'PEACH']
-    words_to_find = random.sample(words, 8)
+    n_words_to_find = 5
     n_columns = 15
     n_rows = 15
 
     logging.info("Main    : creating main....")
     app = QApplication(sys.argv)
-    myapp = WordsSearchForm(words_to_find,
+    myapp = WordsSearchForm(available_words,
+                            n_words_to_find,
                             play_time,
                             interval,
                             n_rows,

@@ -40,22 +40,22 @@ class Ui_Words_Search_Form(object):
 
         self.remaining_time_label = QtWidgets.QLabel(Words_Search_Form)
         self.remaining_time_label.setAlignment(Qt.AlignCenter)
-        self.remaining_time_label.setMaximumSize(100, 20)
-        self.remaining_time_label.setMinimumSize(100, 20)
+        self.remaining_time_label.setMaximumSize(200, 20)
+        self.remaining_time_label.setMinimumSize(150, 20)
         self.remaining_time_label.setObjectName("remaining_time_label")
         self.remaining_time_label.setText('Remaining time: ')
         self.horizontal_layout_1.addWidget(self.remaining_time_label, 0, Qt.AlignCenter)
         self.found_words_label = QtWidgets.QLabel(Words_Search_Form)
         self.found_words_label.setAlignment(Qt.AlignCenter)
-        self.found_words_label.setMaximumSize(100, 20)
-        self.found_words_label.setMinimumSize(100, 20)
+        self.found_words_label.setMaximumSize(200, 20)
+        self.found_words_label.setMinimumSize(150, 20)
         self.found_words_label.setObjectName("found_words_label")
         self.found_words_label.setText('Found words: ')
         self.horizontal_layout_1.addWidget(self.found_words_label, 0, Qt.AlignCenter)
         self.words_to_find_label = QtWidgets.QLabel(Words_Search_Form)
         self.words_to_find_label.setAlignment(Qt.AlignCenter)
-        self.words_to_find_label.setMaximumSize(100, 20)
-        self.words_to_find_label.setMinimumSize(100, 20)
+        self.words_to_find_label.setMaximumSize(200, 20)
+        self.words_to_find_label.setMinimumSize(150, 20)
         self.words_to_find_label.setObjectName("words_to_find_label")
         self.words_to_find_label.setText('Words to find: ')
         self.horizontal_layout_1.addWidget(self.words_to_find_label, 0, Qt.AlignCenter)
@@ -81,7 +81,7 @@ class Ui_Words_Search_Form(object):
 
     def retranslateUi(self, Words_Search_Form):
         _translate = QtCore.QCoreApplication.translate
-        Words_Search_Form.setWindowTitle(_translate("Words_Search_Form", "Words Search"))
+        Words_Search_Form.setWindowTitle(_translate("Words_Search_Form", "FRUITS Words Search"))
         self.remaining_time_label.setText(_translate("Words_Search_Form", "Remaining Time: "))
         self.found_words_label.setText(_translate("Words_Search_Form", "Words Found: "))
         self.words_to_find_label.setText(_translate("Words_Search_Form", "Words to Find: "))
@@ -106,15 +106,3 @@ class Ui_Words_Search_Form(object):
 
     def ui_over_status(self):
         pass
-
-if __name__ == "__main__":
-    import sys
-    words_to_hide = ['BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY']
-    app = QtWidgets.QApplication(sys.argv)
-    Words_Search_Form = QtWidgets.QWidget()
-    ui = Ui_Words_Search_Form()
-    ui.setupUi(Words_Search_Form, 15, 15)
-    ui.buttons_array.hide_words(words_to_hide, mark_word=False)
-    ui.buttons_array.random_populate_all_buttons(overwrite=False)
-    Words_Search_Form.show()
-    sys.exit(app.exec_())
