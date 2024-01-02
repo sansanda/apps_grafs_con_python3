@@ -11,18 +11,18 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import Qt
 from utils.ui.ui_components import Buttons2DArrayWidget
 
+
 class Ui_Words_Search_Form(object):
 
     def setupUi(self, Words_Search_Form, n_rows, n_columns):
-
-        self.grid_n_rows  = n_rows
+        self.grid_n_rows = n_rows
         self.grid_n_columns = n_columns
 
         Words_Search_Form.setObjectName("Words_Search_Form")
         Words_Search_Form.resize(600, 800)
 
         self.vertical_layout = QtWidgets.QVBoxLayout(Words_Search_Form)
-        self.vertical_layout.setContentsMargins(10, 25, 10, 10)
+        self.vertical_layout.setContentsMargins(0, 0, 0, 0)
         self.vertical_layout.setSpacing(0)
         self.horizontal_layout_1 = QtWidgets.QHBoxLayout()
         self.horizontal_layout_1.setContentsMargins(0, 0, 0, 0)
@@ -31,8 +31,17 @@ class Ui_Words_Search_Form(object):
         self.horizontal_layout_0.setContentsMargins(0, 0, 0, 0)
         self.horizontal_layout_0.setSpacing(0)
 
+        self.list_of_words_to_find = QtWidgets.QLabel(Words_Search_Form)
+        self.list_of_words_to_find.setAlignment(Qt.AlignCenter)
+        self.list_of_words_to_find.setMaximumSize(600, 100)
+        self.list_of_words_to_find.setMinimumSize(600, 25)
+        self.list_of_words_to_find.setObjectName("list_of_words_to_find_label")
+        self.list_of_words_to_find.setText('WORDS TO FIND: ')
+
+        self.vertical_layout.addWidget(self.list_of_words_to_find, 0, Qt.AlignLeft)
         self.buttons_array = Buttons2DArrayWidget(Words_Search_Form)
-        self.buttons_array.setMaximumSize(500,500)
+        self.buttons_array.setMaximumSize(500, 500)
+        self.buttons_array.setContentsMargins(0, 0, 0, 0)
         self.vertical_layout.addWidget(self.buttons_array, 0, Qt.AlignCenter)
 
         self.vertical_layout.addLayout(self.horizontal_layout_1, 0)
@@ -82,6 +91,7 @@ class Ui_Words_Search_Form(object):
     def retranslateUi(self, Words_Search_Form):
         _translate = QtCore.QCoreApplication.translate
         Words_Search_Form.setWindowTitle(_translate("Words_Search_Form", "FRUITS Words Search"))
+        self.list_of_words_to_find.setText(_translate("Words_Search_Form", "WORDS TO FIND: "))
         self.remaining_time_label.setText(_translate("Words_Search_Form", "Remaining Time: "))
         self.found_words_label.setText(_translate("Words_Search_Form", "Words Found: "))
         self.words_to_find_label.setText(_translate("Words_Search_Form", "Words to Find: "))
@@ -91,6 +101,7 @@ class Ui_Words_Search_Form(object):
     def ui_init_status(self, remaining_time, words_to_find, found_words):
         self.buttons_array.init_array()
         self.start_pause_pushButton.setText("Start")
+        self.list_of_words_to_find.setText("WORDS TO FIND: ")
         self.remaining_time_label.setText("Remaining Time: " + str(remaining_time))
         self.found_words_label.setText("Words Found: " + str(found_words))
         self.words_to_find_label.setText("Words to Find: " + str(words_to_find))

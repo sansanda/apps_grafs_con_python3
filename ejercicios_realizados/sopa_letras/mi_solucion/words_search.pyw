@@ -9,7 +9,7 @@ from ejercicios_realizados.sopa_letras.mi_solucion.words_search_ui import Ui_Wor
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 
 
-class State(IntEnum):
+class GameState(IntEnum):
     """
     Auxiliary class create for translating the instance states string into
     an Enum_IntEnum that will help to the app to manage such states.
@@ -27,6 +27,7 @@ class WordsSearchForm(QtWidgets.QWidget):
     def __init__(self,
                  available_words,
                  n_words_to_find,
+                 mark_words,
                  play_time=60,
                  interval=1000,
                  n_rows=15,
@@ -38,6 +39,7 @@ class WordsSearchForm(QtWidgets.QWidget):
         self.words_to_find = list()
         self.available_words = available_words
         self.n_words_to_find = n_words_to_find
+        self.mark_words = mark_words
         self.found_words = 0
         self.play_time = play_time
         self.interval = interval
@@ -53,7 +55,7 @@ class WordsSearchForm(QtWidgets.QWidget):
         self.timerTickerWorker = None
         self.timer_worker_thread = None
 
-        self.status = State.INITIATED
+        self.status = GameState.INITIATED
         self._update_ui()
         logging.info("Words_Search    : Initiated.")
 
@@ -69,11 +71,14 @@ class WordsSearchForm(QtWidgets.QWidget):
 
     def start_pause_handler(self):
         # game running
-        if self.status == State.INITIATED:
+        if self.status == GameState.INITIATED:
             self.words_to_find = random.sample(self.available_words, self.n_words_to_find)
-            self.ui.buttons_array.hide_words(self.words_to_find, mark_word=False)
+            self.ui.buttons_array.hide_words(self.words_to_find, mark_word=self.mark_words)
             self.ui.buttons_array.random_populate_all_buttons(overwrite=False)
             self.ui.buttons_array.config_buttons_as(buttons_to_config='all', option='enable', enable=True)
+            self.ui.list_of_words_to_find.setText(
+                self.ui.list_of_words_to_find.text() + '\n\n' + ' -- '.join(self.words_to_find)
+            )
             # Step 2: Create a QThread object for managing timer
             logging.info("Words_Search    : Creating the timer thread...")
             self.timer_worker_thread = QThread()
@@ -88,15 +93,15 @@ class WordsSearchForm(QtWidgets.QWidget):
             self.timer_worker_thread.finished.connect(self.timer_worker_thread.deleteLater)
             self.timer_worker_thread.start()
             logging.info("WordsMatchingWidget    : Timer thread created.")
-            self.status = State.RUNNING
+            self.status = GameState.RUNNING
             self._update_ui()
             self.timerTickerWorker.run()
-        elif self.status == State.RUNNING:
-            self.status = State.PAUSED
+        elif self.status == GameState.RUNNING:
+            self.status = GameState.PAUSED
             self._update_ui()
             self.timerTickerWorker.pause()
-        elif self.status == State.PAUSED:
-            self.status = State.RUNNING
+        elif self.status == GameState.PAUSED:
+            self.status = GameState.RUNNING
             self._update_ui()
             self.timerTickerWorker.run()
 
@@ -104,14 +109,14 @@ class WordsSearchForm(QtWidgets.QWidget):
         # game paused
         logging.info("Words_Search    : Pausing.")
         self.timerTickerWorker.pause()
-        self.status = State.PAUSED
+        self.status = GameState.PAUSED
         self._update_ui()
         logging.info("Words_Search    : Paused.")
 
     def reset(self):
         logging.info("Words_Search    : Initiating.")
         self.timerTickerWorker.pause()
-        self.status = State.INITIATED
+        self.status = GameState.INITIATED
         self.timer_worker_thread.quit()
         self.timerTickerWorker = None
         self.found_words = 0
@@ -122,7 +127,7 @@ class WordsSearchForm(QtWidgets.QWidget):
     def over(self):
         logging.info("Words_Search    : Game is over.")
         self.timerTickerWorker.pause()
-        self.status = State.OVER
+        self.status = GameState.OVER
         self._update_ui()
 
     def _check_finish(self):
@@ -152,13 +157,13 @@ class WordsSearchForm(QtWidgets.QWidget):
         self._check_finish()
 
     def _update_ui(self):
-        if self.status == State.INITIATED:
+        if self.status == GameState.INITIATED:
             self.ui.ui_init_status(self.remaining_time, len(self.words_to_find), self.found_words)
-        if self.status == State.RUNNING:
+        if self.status == GameState.RUNNING:
             self.ui.ui_running_status()
-        if self.status == State.PAUSED:
+        if self.status == GameState.PAUSED:
             self.ui.ui_paused_status()
-        if self.status == State.OVER:
+        if self.status == GameState.OVER:
             self.ui.ui_over_status()
 
     # Events management
@@ -176,10 +181,12 @@ if __name__ == "__main__":
     play_time = 240  # seconds
     interval = 1000  # ms
     available_words = ['MANGO', 'GRAPE', 'APRICOT', 'AVOCADO', 'BLACKBERRY',
-              'BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY',
-              'WATERMELON', 'COCONOUT', 'KIWI', 'LEMON', 'PINEAPPLE',
-              'FIG', 'PAPAYA', 'DATE', 'LIME', 'PEACH']
+                       'BANANA', 'APPLE', 'STRAWBERRY', 'ORANGE', 'CHERRY',
+                       'WATERMELON', 'COCONOUT', 'KIWI', 'LEMON', 'PINEAPPLE',
+                       'FIG', 'PAPAYA', 'DATE', 'LIME', 'PEACH',
+                       'CACAO', 'CRANBERRY', 'GOJI BERRY', 'LYCHEE', 'NECTARINE']
     n_words_to_find = 5
+    mark_words = True
     n_columns = 15
     n_rows = 15
 
@@ -187,6 +194,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     myapp = WordsSearchForm(available_words,
                             n_words_to_find,
+                            mark_words,
                             play_time,
                             interval,
                             n_rows,
