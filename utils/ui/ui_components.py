@@ -1,9 +1,8 @@
 import random
 import string
-from enum import IntFlag, auto
-from time import sleep
+import time
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
 from sortedcontainers import SortedList
@@ -94,7 +93,7 @@ class CellIn2DArray(QPushButton):
         return r
 
 
-class Buttons2DArrayWidget(QWidget):
+class WordsSearch_2DArrayOfButtons_Widget(QWidget):
     text_available = pyqtSignal(str)
 
     ALL_NEIGHBOURS = 'ALL'
@@ -132,6 +131,9 @@ class Buttons2DArrayWidget(QWidget):
 
     def word_matched(self):
         logging.info('Received signal word_matched from WordsSearchForm')
+        # feedback for the gamer
+
+        # continue game
         self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
                                option='enable', enable=False)
         self.config_buttons_as(buttons_to_config=self.selected_buttons[:],
@@ -443,16 +445,3 @@ class Buttons2DArrayWidget(QWidget):
 
         r = r + '}'
 
-
-if __name__ == "__main__":
-    import sys
-
-    app = QApplication(sys.argv)
-    b = CellIn2DArray(None, 0, 1, 30, 30, 'X')
-    print(b)
-    b.set_selected(True)
-    print(b)
-    b.set_enable(False)
-    print(b)
-    w = Buttons2DArrayWidget(None, 15, 15)
-    sys.exit(app.exec_())

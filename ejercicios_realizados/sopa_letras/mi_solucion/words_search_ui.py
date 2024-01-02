@@ -9,7 +9,7 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import Qt
-from utils.ui.ui_components import Buttons2DArrayWidget
+from utils.ui.ui_components import WordsSearch_2DArrayOfButtons_Widget
 
 
 class Ui_Words_Search_Form(object):
@@ -39,7 +39,7 @@ class Ui_Words_Search_Form(object):
         self.list_of_words_to_find.setText('WORDS TO FIND: ')
 
         self.vertical_layout.addWidget(self.list_of_words_to_find, 0, Qt.AlignLeft)
-        self.buttons_array = Buttons2DArrayWidget(Words_Search_Form)
+        self.buttons_array = WordsSearch_2DArrayOfButtons_Widget(Words_Search_Form)
         self.buttons_array.setMaximumSize(500, 500)
         self.buttons_array.setContentsMargins(0, 0, 0, 0)
         self.vertical_layout.addWidget(self.buttons_array, 0, Qt.AlignCenter)
