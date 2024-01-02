@@ -9,38 +9,52 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QButtonGroup, QRadioButton
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QButtonGroup, QRadioButton, QSizePolicy, QLayout, \
+    QAbstractScrollArea, QFrame
 
 from utils.ui.ui_components import WordsSearch_2DArrayOfButtons_Widget
 
 
 class UiSudokuForm(object):
+    width = 600
+    heigth = 800
 
     def setupUi(self, SudokuForm):
         SudokuForm.setObjectName("Sudoku_Form")
-        SudokuForm.resize(600, 800)
+        SudokuForm.resize(UiSudokuForm.width, UiSudokuForm.heigth)
 
         self.vertical_layout = QtWidgets.QVBoxLayout(SudokuForm)
-        self.vertical_layout.setContentsMargins(0, 0, 0, 0)
-        self.vertical_layout.setSpacing(0)
+        self.vertical_layout.setContentsMargins(20, 20, 20, 20)
+        self.vertical_layout.setSpacing(50)
+        self.vertical_layout.setSizeConstraint(QLayout.SetMinimumSize)
         self.horizontal_layout_1 = QtWidgets.QHBoxLayout()
         self.horizontal_layout_1.setContentsMargins(0, 0, 0, 0)
-        self.horizontal_layout_1.setSpacing(0)
+        self.horizontal_layout_1.setSpacing(10)
         self.horizontal_layout_0 = QtWidgets.QHBoxLayout()
         self.horizontal_layout_0.setContentsMargins(0, 0, 0, 0)
-        self.horizontal_layout_0.setSpacing(0)
+        self.horizontal_layout_0.setSpacing(10)
 
         # create a table of 9x9
-        self.n_rows = 9
-        self.n_columns = 9
+        self.n_rows = self.n_columns = 9
+        self.row_heigth = self.column_width = 60
         self.sudoku_table = QTableWidget(self.n_rows, self.n_columns, SudokuForm)
+        self.sudoku_table.setMinimumSize(self.n_columns * self.column_width + 2,
+                                         self.n_rows * self.row_heigth + 2)
+        self.sudoku_table.setContentsMargins(5, 5, 5, 5)
+        self.sudoku_table.verticalHeader().setVisible(False)
+        self.sudoku_table.horizontalHeader().setVisible(False)
+
+        for r in range(0, self.n_rows):
+            self.sudoku_table.setRowHeight(r, self.row_heigth)
+        for c in range(0, self.n_columns):
+            self.sudoku_table.setColumnWidth(c, self.column_width)
+
         for r in range(1, self.n_rows + 1):
             for c in range(1, self.n_columns + 1):
                 item = QTableWidgetItem()
                 self.sudoku_table.setItem(r, c, item)
-        self.sudoku_table.setMaximumSize(500, 500)
-        self.sudoku_table.setContentsMargins(0, 0, 0, 0)
-        self.vertical_layout.addWidget(self.sudoku_table, 0, Qt.AlignCenter)
+
+        self.vertical_layout.addWidget(self.sudoku_table, 2, Qt.AlignCenter)
 
         # create and add the group of radio buttons
         self.difficulty_level_radio_buttons_group = QButtonGroup(SudokuForm)  # Number group
