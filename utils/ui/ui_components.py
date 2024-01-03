@@ -3,7 +3,7 @@ import string
 import time
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QApplication
 from sortedcontainers import SortedList
 
@@ -445,3 +445,89 @@ class WordsSearch_2DArrayOfButtons_Widget(QWidget):
 
         r = r + '}'
 
+
+class Ui_SudokuTable(QWidget):
+
+    def __init__(self, parent, min_width, min_height, column_width, row_height):
+        super().__init__(parent)
+        self.setMinimumWidth(min_width)
+        self.setMinimumHeight(min_height)
+        self.n_rows = self.n_columns = 9
+        self.column_width = column_width
+        self.row_height = row_height
+
+    def setupUi(self, SudokuTable):
+        SudokuTable.setObjectName("SudokuTable")
+        SudokuTable.resize(self.minimumWidth(), self.minimumHeight())
+
+        # create a table of 9x9
+
+        self.gridLayout = QtWidgets.QGridLayout(SudokuTable)
+        self.gridLayout.setObjectName("gridLayout")
+        self.gridLayout.setSpacing(0)
+        self.gridLayout.setAlignment(Qt.AlignCenter)
+
+        for r in range(0, self.n_rows):
+            for c in range(0, self.n_columns):
+                lineEdit = QtWidgets.QLineEdit(SudokuTable)
+                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                sizePolicy.setHorizontalStretch(0)
+                sizePolicy.setVerticalStretch(0)
+                sizePolicy.setHeightForWidth(lineEdit.sizePolicy().hasHeightForWidth())
+                lineEdit.setSizePolicy(sizePolicy)
+                lineEdit.setAlignment(Qt.AlignCenter)
+                lineEdit.setStyleSheet('font-size:12pt; font-weight: bold; color: dodgerblue;')
+                lineEdit.setMinimumSize(QtCore.QSize(self.column_width, self.row_height))
+                lineEdit.setMaximumSize(QtCore.QSize(self.column_width, self.row_height))
+                lineEdit.setObjectName("cell" + str(r) + str(c))
+                lineEdit.setText(str(r) + str(c))
+                self.gridLayout.addWidget(lineEdit, r, c)
+
+        for i in [0, 3, 6, 9]:
+            line = QtWidgets.QFrame(SudokuTable)
+            line.setFrameShape(QtWidgets.QFrame.VLine)
+            line.setFrameShadow(QtWidgets.QFrame.Plain)
+            line.setLineWidth(10)
+            line.setMidLineWidth(10)
+            line.setObjectName("line_v" + str(i))
+            self.gridLayout.addWidget(line, 0, i, 9, 1)
+
+        for i in [0, 3, 6, 9]:
+            line = QtWidgets.QFrame(SudokuTable)
+            line.setFrameShape(QtWidgets.QFrame.HLine)
+            line.setFrameShadow(QtWidgets.QFrame.Plain)
+            line.setLineWidth(10)
+            line.setMidLineWidth(10)
+            line.setObjectName("line_h" + str(i))
+            self.gridLayout.addWidget(line, i, 0, 1, 9, Qt.AlignTop)
+
+        self.retranslateUi(SudokuTable)
+        QtCore.QMetaObject.connectSlotsByName(SudokuTable)
+
+    def retranslateUi(self, Sudoku_Form):
+        _translate = QtCore.QCoreApplication.translate
+
+
+    def ui_init_status(self, remaining_time):
+        pass
+
+    def ui_running_status(self):
+        pass
+
+    def ui_paused_status(self):
+        pass
+
+    def ui_over_status(self):
+        pass
+
+import sys
+def main():
+
+    app = QApplication(sys.argv)
+    ex = Ui_SudokuTable(None, 600, 600, 60, 60)
+    ex.setupUi(ex)
+    ex.show()
+    sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()

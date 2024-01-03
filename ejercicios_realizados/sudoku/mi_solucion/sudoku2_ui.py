@@ -9,10 +9,9 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QButtonGroup, QRadioButton, QSizePolicy, QLayout, \
-    QAbstractScrollArea, QFrame
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QButtonGroup, QRadioButton, QLayout
 
-from utils.ui.ui_components import WordsSearch_2DArrayOfButtons_Widget
+from utils.ui.ui_components import Ui_SudokuTable
 
 
 class UiSudokuForm(object):
@@ -27,48 +26,41 @@ class UiSudokuForm(object):
         self.vertical_layout.setContentsMargins(20, 20, 20, 20)
         self.vertical_layout.setSpacing(50)
         self.vertical_layout.setSizeConstraint(QLayout.SetMinimumSize)
-        self.horizontal_layout_1 = QtWidgets.QHBoxLayout()
-        self.horizontal_layout_1.setContentsMargins(0, 0, 0, 0)
-        self.horizontal_layout_1.setSpacing(10)
-        self.horizontal_layout_0 = QtWidgets.QHBoxLayout()
+
+        # create a table of 9x9
+        self.sudoku_table = Ui_SudokuTable(None, 600, 600, 60, 60)
+        self.sudoku_table.setupUi(self.sudoku_table)
+        self.vertical_layout.addWidget(self.sudoku_table, 0)
+
+        # create and add the group of radio buttons
+
+        self.groupBox = QtWidgets.QGroupBox(SudokuForm)
+        self.groupBox.setMinimumSize(UiSudokuForm.width, 50)
+        self.groupBox.setAlignment(QtCore.Qt.AlignCenter)
+        self.groupBox.setFlat(True)
+        self.groupBox.setObjectName("Difficulty Level")
+        self.groupBox.setTitle('Difficulty Level')
+
+        self.difficulty_h_layout = QtWidgets.QHBoxLayout(self.groupBox)
+        self.difficulty_h_layout.setContentsMargins(0, 0, 0, 0)
+        self.difficulty_h_layout.setSpacing(10)
+
+        difficulty_levels = 5
+        for level_number in range(1, difficulty_levels + 1):
+            rb = QRadioButton('Level ' + str(level_number), self.groupBox)
+            rb.setObjectName('level' + str(level_number))
+            self.difficulty_h_layout.addWidget(rb)
+        last_rb = QRadioButton('Solution', self.groupBox)
+        last_rb.setObjectName('solution')
+        self.difficulty_h_layout.addWidget(last_rb)
+
+        self.vertical_layout.addWidget(self.groupBox, 0, Qt.AlignCenter)
+
+        # create and add the buttons
+        self.horizontal_layout_0 = QtWidgets.QHBoxLayout(SudokuForm)
         self.horizontal_layout_0.setContentsMargins(0, 0, 0, 0)
         self.horizontal_layout_0.setSpacing(10)
 
-        # create a table of 9x9
-        self.n_rows = self.n_columns = 9
-        self.row_heigth = self.column_width = 60
-        self.sudoku_table = QTableWidget(self.n_rows, self.n_columns, SudokuForm)
-        self.sudoku_table.setMinimumSize(self.n_columns * self.column_width + 2,
-                                         self.n_rows * self.row_heigth + 2)
-        self.sudoku_table.setContentsMargins(5, 5, 5, 5)
-        self.sudoku_table.verticalHeader().setVisible(False)
-        self.sudoku_table.horizontalHeader().setVisible(False)
-
-        for r in range(0, self.n_rows):
-            self.sudoku_table.setRowHeight(r, self.row_heigth)
-        for c in range(0, self.n_columns):
-            self.sudoku_table.setColumnWidth(c, self.column_width)
-
-        for r in range(1, self.n_rows + 1):
-            for c in range(1, self.n_columns + 1):
-                item = QTableWidgetItem()
-                self.sudoku_table.setItem(r, c, item)
-
-        self.vertical_layout.addWidget(self.sudoku_table, 2, Qt.AlignCenter)
-
-        # create and add the group of radio buttons
-        self.difficulty_level_radio_buttons_group = QButtonGroup(SudokuForm)  # Number group
-        difficulty_levels = 5
-        for level_number in range(1, difficulty_levels + 1):
-            rb = QRadioButton(str(level_number))
-            self.difficulty_level_radio_buttons_group.addButton(rb)
-            self.horizontal_layout_1.addWidget(rb)
-        last_rb = QRadioButton('Solution')
-        self.difficulty_level_radio_buttons_group.addButton(last_rb)
-        self.horizontal_layout_1.addWidget(last_rb)
-        self.vertical_layout.addLayout(self.horizontal_layout_1, 0)
-
-        # create and add the buttons
         self.generar_sudoku_pushButton = QtWidgets.QPushButton(SudokuForm)
         self.generar_sudoku_pushButton.setMaximumSize(200, 75)
         self.generar_sudoku_pushButton.setMinimumSize(200, 75)

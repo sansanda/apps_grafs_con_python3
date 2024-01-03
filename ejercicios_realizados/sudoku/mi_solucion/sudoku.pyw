@@ -1,12 +1,9 @@
 import logging
-import random
 from enum import IntEnum
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QMessageBox
-
-from ejercicios_realizados.sopa_letras.mi_solucion.words_search_ui import Ui_Words_Search_Form
-from ejercicios_realizados.sudoku.mi_solucion.sudoku_ui import UiSudokuForm
+from PyQt5.QtWidgets import QApplication
+from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 
 
@@ -63,7 +60,7 @@ class SudokuForm(QtWidgets.QWidget):
         #     logging.info("Words_Search    : Creating the timer thread...")
         #     self.timer_worker_thread = QThread()
         #     # Step 3: Create a worker object
-        #     self.timerTickerWorker = TimerTickerWorker(self.interval, self.update_ramaining_time)
+        #     self.timerTickerWorker = TimerTickerWorker(self.interval, self.update_remaining_time)
         #     # Step 4: Move worker to the thread
         #     self.timerTickerWorker.moveToThread(self.timer_worker_thread)
         #     # Step 5: Connect signals and slots
@@ -130,7 +127,7 @@ class SudokuForm(QtWidgets.QWidget):
         #     self.reset()
 
     # UI updating
-    def update_ramaining_time(self):
+    def update_remaining_time(self):
         logging.debug("Updating remaining time...")
         # self.remaining_time = self.remaining_time - 1
         # self.ui.remaining_time_label.setText("Remaining Time: " + str(self.remaining_time))
