@@ -9,9 +9,10 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QButtonGroup, QRadioButton, QLayout
+from PyQt5.QtCore import QRect
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QButtonGroup, QRadioButton, QLayout, QSizePolicy
 
-from utils.ui.ui_components import Ui_SudokuTable
+from utils.ui.ui_components import SudokuTableQWidget
 
 
 class UiSudokuForm(object):
@@ -19,31 +20,32 @@ class UiSudokuForm(object):
     heigth = 800
 
     def setupUi(self, SudokuForm):
-        SudokuForm.setObjectName("Sudoku_Form")
-        SudokuForm.resize(UiSudokuForm.width, UiSudokuForm.heigth)
+        SudokuForm.setObjectName("SudokuForm")
+        SudokuForm.resize(600, 800)
 
         self.vertical_layout = QtWidgets.QVBoxLayout(SudokuForm)
-        self.vertical_layout.setContentsMargins(20, 20, 20, 20)
-        self.vertical_layout.setSpacing(50)
-        self.vertical_layout.setSizeConstraint(QLayout.SetMinimumSize)
+        self.vertical_layout.setContentsMargins(30, 30, 30, 30)
+        self.vertical_layout.setSpacing(0)
+        self.vertical_layout.setAlignment(Qt.AlignCenter)
 
         # create a table of 9x9
-        self.sudoku_table = Ui_SudokuTable(None, 600, 600, 60, 60)
-        self.sudoku_table.setupUi(self.sudoku_table)
-        self.vertical_layout.addWidget(self.sudoku_table, 0)
+        self.sudoku_table = SudokuTableQWidget(SudokuForm)
+        self.vertical_layout.addWidget(self.sudoku_table,  0, Qt.AlignCenter)
 
         # create and add the group of radio buttons
-
         self.groupBox = QtWidgets.QGroupBox(SudokuForm)
-        self.groupBox.setMinimumSize(UiSudokuForm.width, 50)
+        self.groupBox.setMinimumSize(UiSudokuForm.width, 0)
+        self.groupBox.setMaximumSize(UiSudokuForm.width, 100)
+        self.groupBox.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.groupBox.setAlignment(QtCore.Qt.AlignCenter)
         self.groupBox.setFlat(True)
         self.groupBox.setObjectName("Difficulty Level")
         self.groupBox.setTitle('Difficulty Level')
 
         self.difficulty_h_layout = QtWidgets.QHBoxLayout(self.groupBox)
-        self.difficulty_h_layout.setContentsMargins(0, 0, 0, 0)
-        self.difficulty_h_layout.setSpacing(10)
+        self.difficulty_h_layout.setContentsMargins(0, 30, 0, 30)
+        self.difficulty_h_layout.setSpacing(40)
+        self.difficulty_h_layout.setAlignment(Qt.AlignCenter)
 
         difficulty_levels = 5
         for level_number in range(1, difficulty_levels + 1):
@@ -53,6 +55,7 @@ class UiSudokuForm(object):
         last_rb = QRadioButton('Solution', self.groupBox)
         last_rb.setObjectName('solution')
         self.difficulty_h_layout.addWidget(last_rb)
+        self.groupBox.setLayout(self.difficulty_h_layout)
 
         self.vertical_layout.addWidget(self.groupBox, 0, Qt.AlignCenter)
 
@@ -84,16 +87,17 @@ class UiSudokuForm(object):
         self.vertical_layout.addLayout(self.horizontal_layout_0, 0)
 
         SudokuForm.setLayout(self.vertical_layout)
-
         self.retranslateUi(SudokuForm)
         QtCore.QMetaObject.connectSlotsByName(SudokuForm)
+
+        print(self.sudoku_table.get_number_at_table_pos(1,1))
 
     def retranslateUi(self, Sudoku_Form):
         _translate = QtCore.QCoreApplication.translate
         Sudoku_Form.setWindowTitle(_translate("Sudoku_Form", "FRUITS Words Search"))
-        self.generar_sudoku_pushButton.setText(_translate("Sudoku_Form", "Generar Sudoku"))
-        self.visualizar_sudoku_pushButton.setText(_translate("Sudoku_Form", "Visualizar Sudoku"))
-        self.comprobar_solucion_pushButton.setText(_translate("Sudoku_Form", "Comprobar Solución"))
+        # self.generar_sudoku_pushButton.setText(_translate("Sudoku_Form", "Generar Sudoku"))
+        # self.visualizar_sudoku_pushButton.setText(_translate("Sudoku_Form", "Visualizar Sudoku"))
+        # self.comprobar_solucion_pushButton.setText(_translate("Sudoku_Form", "Comprobar Solución"))
 
     def ui_init_status(self, remaining_time):
         pass

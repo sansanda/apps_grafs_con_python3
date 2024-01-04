@@ -5,7 +5,7 @@ from PyQt5.QtCore import QThread, QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
-
+import sys
 
 class GameState(IntEnum):
     """
@@ -150,7 +150,6 @@ class SudokuForm(QtWidgets.QWidget):
 
 
 if __name__ == "__main__":
-    import sys
 
     _format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=_format, level=logging.INFO,

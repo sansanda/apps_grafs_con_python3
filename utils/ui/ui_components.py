@@ -446,30 +446,51 @@ class WordsSearch_2DArrayOfButtons_Widget(QWidget):
         r = r + '}'
 
 
-class Ui_SudokuTable(QWidget):
+class SudokuTableQWidget(QWidget):
+    ONE_DIGIT_INT_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-    def __init__(self, parent, min_width, min_height, column_width, row_height):
+    def __init__(self, parent=None, column_width=60, row_height=60):
         super().__init__(parent)
-        self.setMinimumWidth(min_width)
-        self.setMinimumHeight(min_height)
+        self.setObjectName("SudokuTableWidget")
+        self.table_rows_reserved_for_lines = [3, 7]
+        self.table_columns_reserved_for_lines = [3, 7]
+        self.table_rows_reserved_for_numbers = [0, 1, 2, 4, 5, 6, 8, 9, 10]
+        self.table_columns_reserved_for_numbers = [0, 1, 2, 4, 5, 6, 8, 9, 10]
+
         self.n_rows = self.n_columns = 9
         self.column_width = column_width
         self.row_height = row_height
 
-    def setupUi(self, SudokuTable):
-        SudokuTable.setObjectName("SudokuTable")
-        SudokuTable.resize(self.minimumWidth(), self.minimumHeight())
-
-        # create a table of 9x9
-
-        self.gridLayout = QtWidgets.QGridLayout(SudokuTable)
+        self.gridLayout = QtWidgets.QGridLayout(self)
         self.gridLayout.setObjectName("gridLayout")
         self.gridLayout.setSpacing(0)
         self.gridLayout.setAlignment(Qt.AlignCenter)
+        self.gridLayout.setContentsMargins(10, 10, 10, 20)
 
-        for r in range(0, self.n_rows):
-            for c in range(0, self.n_columns):
-                lineEdit = QtWidgets.QLineEdit(SudokuTable)
+        # add the horizontal lines
+        for r in self.table_rows_reserved_for_lines:
+            line = QtWidgets.QFrame(self)
+            line.setFrameShape(QtWidgets.QFrame.HLine)
+            line.setFrameShadow(QtWidgets.QFrame.Plain)
+            line.setLineWidth(10)
+            line.setMidLineWidth(10)
+            line.setObjectName("line_h" + str(r))
+            self.gridLayout.addWidget(line, r, 0, 1, self.n_rows + len(self.table_rows_reserved_for_lines),
+                                      Qt.AlignTop)
+        # add the vertical lines
+        for c in self.table_columns_reserved_for_lines:
+            line = QtWidgets.QFrame(self)
+            line.setFrameShape(QtWidgets.QFrame.VLine)
+            line.setFrameShadow(QtWidgets.QFrame.Plain)
+            line.setLineWidth(10)
+            line.setMidLineWidth(10)
+            line.setObjectName("line_v" + str(c))
+            self.gridLayout.addWidget(line, 0, c, self.n_columns + len(self.table_columns_reserved_for_lines), 1)
+
+        # add the lineEdit widgets
+        for r in self.table_rows_reserved_for_numbers:
+            for c in self.table_columns_reserved_for_numbers:
+                lineEdit = QtWidgets.QLineEdit(self)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
                 sizePolicy.setHorizontalStretch(0)
                 sizePolicy.setVerticalStretch(0)
@@ -480,54 +501,84 @@ class Ui_SudokuTable(QWidget):
                 lineEdit.setMinimumSize(QtCore.QSize(self.column_width, self.row_height))
                 lineEdit.setMaximumSize(QtCore.QSize(self.column_width, self.row_height))
                 lineEdit.setObjectName("cell" + str(r) + str(c))
-                lineEdit.setText(str(r) + str(c))
-                self.gridLayout.addWidget(lineEdit, r, c)
+                lineEdit.textChanged.connect(lambda foo_param, x=lineEdit: self.line_edit_change_handler(x))
+                self.gridLayout.addWidget(lineEdit, r, c, 1, 1)
 
-        for i in [0, 3, 6, 9]:
-            line = QtWidgets.QFrame(SudokuTable)
-            line.setFrameShape(QtWidgets.QFrame.VLine)
-            line.setFrameShadow(QtWidgets.QFrame.Plain)
-            line.setLineWidth(10)
-            line.setMidLineWidth(10)
-            line.setObjectName("line_v" + str(i))
-            self.gridLayout.addWidget(line, 0, i, 9, 1)
+        self.reset_table(0)
+        self.setLayout(self.gridLayout)
+        QtCore.QMetaObject.connectSlotsByName(self)
 
-        for i in [0, 3, 6, 9]:
-            line = QtWidgets.QFrame(SudokuTable)
-            line.setFrameShape(QtWidgets.QFrame.HLine)
-            line.setFrameShadow(QtWidgets.QFrame.Plain)
-            line.setLineWidth(10)
-            line.setMidLineWidth(10)
-            line.setObjectName("line_h" + str(i))
-            self.gridLayout.addWidget(line, i, 0, 1, 9, Qt.AlignTop)
+    def reset_table(self, filling_number=None):
+        if filling_number not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS:
+            filling_number = "0"
+        for r in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+            for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                self.insert_number_at_table_pos(r, c, filling_number)
 
-        self.retranslateUi(SudokuTable)
-        QtCore.QMetaObject.connectSlotsByName(SudokuTable)
+    def insert_number_at_table_pos(self, row, column, number):
+        """
+        Insert a number in the row and column done by ther parameters.
+        From the function the sudoku table is a 9x9 numbers table
+        :param row: the row where to insert (0 to 8 positions)
+        :param column: the column where to insert (0 to 8 positions)
+        :param number: the number to insert
+        :return: None
+        """
+        if (number not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS or
+                row not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1] or
+                column not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
+            return
+        lineEdit = self.gridLayout.itemAtPosition(self.table_rows_reserved_for_numbers[row],
+                                                  self.table_columns_reserved_for_numbers[column]).widget()
+        lineEdit.blockSignals(True)
+        lineEdit.setText(str(number))
+        lineEdit.blockSignals(False)
 
-    def retranslateUi(self, Sudoku_Form):
-        _translate = QtCore.QCoreApplication.translate
+    def get_number_at_table_pos(self, row, column):
+        """
+        Gets the number in the row and column indicated by ther parameters.
+        From the function the sudoku table is a 9x9 numbers table
+        :param row: the row where it is the number (0 to 8 positions)
+        :param column: the column where it is the number (0 to 8 positions)
+        :return: the number at the position given by the row and column parameters or
+        None if was impossible to obtain the number
+        """
+        number = None
+        if (row not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1] or
+                column not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
+            pass
+        else:
+            number = int(self.gridLayout.itemAtPosition(self.table_rows_reserved_for_numbers[row],
+                                                        self.table_columns_reserved_for_numbers[column]).widget().text()
+                         )
+        return number
 
+    # signal handlers
+    def line_edit_change_handler(self, lineEdit):
+        # check if the text is a one digit integer between 1 and 9.
+        # if yes --> leave it
+        # if not --> set 1 as lene edit text
+        text = lineEdit.text()
+        if (text.isnumeric() and
+                int(text) in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[1:] and
+                len(text) == 1
+        ):
+            pass
+        else:
+            lineEdit.setText(str(1))
+        lineEdit.selectAll()
 
-    def ui_init_status(self, remaining_time):
-        pass
-
-    def ui_running_status(self):
-        pass
-
-    def ui_paused_status(self):
-        pass
-
-    def ui_over_status(self):
-        pass
 
 import sys
-def main():
 
+
+def main():
     app = QApplication(sys.argv)
-    ex = Ui_SudokuTable(None, 600, 600, 60, 60)
-    ex.setupUi(ex)
+    parent = QtWidgets.QWidget(None)
+    ex = SudokuTableQWidget(parent, 600, 600, 60, 60)
     ex.show()
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
