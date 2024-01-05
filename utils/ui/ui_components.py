@@ -456,6 +456,12 @@ class SudokuTableQWidget(QWidget):
         self.table_columns_reserved_for_lines = [3, 7]
         self.table_rows_reserved_for_numbers = [0, 1, 2, 4, 5, 6, 8, 9, 10]
         self.table_columns_reserved_for_numbers = [0, 1, 2, 4, 5, 6, 8, 9, 10]
+        self.nonets_table_rows = [[0, 1, 2],
+                                  [3, 4, 5],
+                                  [6, 7, 8]]
+        self.nonets_table_columns = [[0, 1, 2],
+                                     [3, 4, 5],
+                                     [6, 7, 8]]
 
         self.n_rows = self.n_columns = 9
         self.column_width = column_width
@@ -506,7 +512,6 @@ class SudokuTableQWidget(QWidget):
 
         self.reset_table()
         self.populate_table_randomly()
-        print(self.get_numbers_in_row(2))
         self.setLayout(self.gridLayout)
         QtCore.QMetaObject.connectSlotsByName(self)
 
@@ -516,10 +521,16 @@ class SudokuTableQWidget(QWidget):
                 self._insert_number_at_table_pos(r, c, filling_text)
 
     def populate_table_randomly(self):
-        for r in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-            for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
-                self._insert_number_at_table_pos(r, c, random_number)
+        n = 0
+        for row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+            for column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                while True:
+                    random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
+                    if self.number_match_rules_of_sudoku(random_number, row, column):
+                        break
+                self._insert_number_at_table_pos(row, column, random_number)
+                n = n + 1
+                print(n)
 
     def _insert_number_at_table_pos(self, row, column, number):
         """
@@ -556,7 +567,7 @@ class SudokuTableQWidget(QWidget):
             pass
         else:
             text = self.gridLayout.itemAtPosition(self.table_rows_reserved_for_numbers[row],
-                                                        self.table_columns_reserved_for_numbers[column]).widget().text()
+                                                  self.table_columns_reserved_for_numbers[column]).widget().text()
             try:
                 number = int(text)
             except ValueError:
@@ -574,8 +585,8 @@ class SudokuTableQWidget(QWidget):
         """
         row_numbers = []
         if row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-            for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                row_numbers.append(self.get_number_at_table_pos(row, c))
+            for column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                row_numbers.append(self.get_number_at_table_pos(row, column))
         return row_numbers
 
     def get_numbers_in_column(self, column):
@@ -589,12 +600,41 @@ class SudokuTableQWidget(QWidget):
         """
         column_numbers = []
         if column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-            for r in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                column_numbers.append(self.get_number_at_table_pos(r, column))
+            for row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                column_numbers.append(self.get_number_at_table_pos(row, column))
         return column_numbers
 
     def get_numbers_in_nonet(self, nonet_row, nonet_column):
-        pass
+        nonet_numbers = []
+        if (nonet_column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[0:3] and
+                nonet_row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[0:3]):
+            for row in self.nonets_table_rows[nonet_row]:
+                for column in self.nonets_table_columns[nonet_column]:
+                    nonet_numbers.append(
+                        self.get_number_at_table_pos(row, column)
+                    )
+        return nonet_numbers
+
+    def _get_nonet_indexes(self, row, column):
+        nonet_row = nonet_column = None
+        for row_index in range(0, len(self.nonets_table_rows)):
+            if row in self.nonets_table_rows[row_index]:
+                nonet_row = row_index
+                break
+        for column_index in range(0, len(self.nonets_table_columns)):
+            if column in self.nonets_table_columns[column_index]:
+                nonet_column = column_index
+                break
+        return nonet_row, nonet_column
+
+    def number_match_rules_of_sudoku(self, number, row, column):
+        match = True
+        nonet_row, nonet_column = self._get_nonet_indexes(row, column)
+        if (number in self.get_numbers_in_row(row) or
+                number in self.get_numbers_in_column(column) or
+                number in self.get_numbers_in_nonet(nonet_row, nonet_column)):
+            match = False
+        return match
 
     # signal handlers
     def _line_edit_change_handler(self, lineEdit):
