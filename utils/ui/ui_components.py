@@ -501,21 +501,27 @@ class SudokuTableQWidget(QWidget):
                 lineEdit.setMinimumSize(QtCore.QSize(self.column_width, self.row_height))
                 lineEdit.setMaximumSize(QtCore.QSize(self.column_width, self.row_height))
                 lineEdit.setObjectName("cell" + str(r) + str(c))
-                lineEdit.textChanged.connect(lambda foo_param, x=lineEdit: self.line_edit_change_handler(x))
+                lineEdit.textChanged.connect(lambda foo_param, x=lineEdit: self._line_edit_change_handler(x))
                 self.gridLayout.addWidget(lineEdit, r, c, 1, 1)
 
-        self.reset_table(0)
+        self.reset_table()
+        self.populate_table_randomly()
+        print(self.get_numbers_in_row(2))
         self.setLayout(self.gridLayout)
         QtCore.QMetaObject.connectSlotsByName(self)
 
-    def reset_table(self, filling_number=None):
-        if filling_number not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS:
-            filling_number = "0"
+    def reset_table(self, filling_text=None):
         for r in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
             for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                self.insert_number_at_table_pos(r, c, filling_number)
+                self._insert_number_at_table_pos(r, c, filling_text)
 
-    def insert_number_at_table_pos(self, row, column, number):
+    def populate_table_randomly(self):
+        for r in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+            for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
+                self._insert_number_at_table_pos(r, c, random_number)
+
+    def _insert_number_at_table_pos(self, row, column, number):
         """
         Insert a number in the row and column done by ther parameters.
         From the function the sudoku table is a 9x9 numbers table
@@ -537,7 +543,8 @@ class SudokuTableQWidget(QWidget):
     def get_number_at_table_pos(self, row, column):
         """
         Gets the number in the row and column indicated by ther parameters.
-        From the function the sudoku table is a 9x9 numbers table
+        Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
+        in the range of [1:9] inc.
         :param row: the row where it is the number (0 to 8 positions)
         :param column: the column where it is the number (0 to 8 positions)
         :return: the number at the position given by the row and column parameters or
@@ -548,13 +555,56 @@ class SudokuTableQWidget(QWidget):
                 column not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
             pass
         else:
-            number = int(self.gridLayout.itemAtPosition(self.table_rows_reserved_for_numbers[row],
+            text = self.gridLayout.itemAtPosition(self.table_rows_reserved_for_numbers[row],
                                                         self.table_columns_reserved_for_numbers[column]).widget().text()
-                         )
+            try:
+                number = int(text)
+            except ValueError:
+                pass
         return number
 
+    def get_numbers_in_row(self, row):
+        """
+        Gets the numbers in the row indicated by the parameter.
+        Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
+        in the range of [1:9] inc.
+        :param row: the row where there are the numbers (0 to 8 positions)
+        :return: a list containing the numbers of the row.
+        The List can be full of None if the row was totally empty --> ""
+        """
+        row_numbers = []
+        if row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+            for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                row_numbers.append(self.get_number_at_table_pos(row, c))
+        return row_numbers
+
+    def get_numbers_in_column(self, column):
+        """
+        Gets the numbers in the column indicated by the parameter.
+        Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
+        in the range of [1:9] inc.
+        :param column: the column where there are the numbers (0 to 8 positions)
+        :return: a list containing the numbers of the column.
+        The List can be full of None if the column was totally empty --> ""
+        """
+        column_numbers = []
+        if column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+            for r in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
+                column_numbers.append(self.get_number_at_table_pos(r, column))
+        return column_numbers
+
+    def get_numbers_in_nonet(self, nonet_row, nonet_column):
+        pass
+
     # signal handlers
-    def line_edit_change_handler(self, lineEdit):
+    def _line_edit_change_handler(self, lineEdit):
+        """
+        Checks the new value text value of the lineEdit Widget.
+        Only accepts representations of integers numbers between the range "1" -- "9" inclusives.
+        If the text entered is out of range then the "1" default value will be setted.
+        :param lineEdit: The widget where the text has been changed.
+        :return: None
+        """
         # check if the text is a one digit integer between 1 and 9.
         # if yes --> leave it
         # if not --> set 1 as lene edit text
