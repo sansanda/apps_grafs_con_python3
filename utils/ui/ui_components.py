@@ -511,7 +511,7 @@ class SudokuTableQWidget(QWidget):
                 self.gridLayout.addWidget(lineEdit, r, c, 1, 1)
 
         self.reset_table()
-        self.populate_table_randomly()
+        self._insert_random_numbers_in_table_in_random_positions(20)
         self.setLayout(self.gridLayout)
         QtCore.QMetaObject.connectSlotsByName(self)
 
@@ -520,17 +520,16 @@ class SudokuTableQWidget(QWidget):
             for c in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
                 self._insert_number_at_table_pos(r, c, filling_text)
 
-    def populate_table_randomly(self):
+    def _insert_random_numbers_in_table_in_random_positions(self, n_numbers):
         n = 0
-        for row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-            for column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                while True:
-                    random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
-                    if self.number_match_rules_of_sudoku(random_number, row, column):
-                        break
-                self._insert_number_at_table_pos(row, column, random_number)
-                n = n + 1
-                print(n)
+        for n in range(0, n_numbers, 1):
+            while True:
+                random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
+                if self.test_if_number_match_rules_of_sudoku(random_number, random_row, random_column):
+                    self._insert_number_at_table_pos(random_row, random_column, random_number)
+                    break
 
     def _insert_number_at_table_pos(self, row, column, number):
         """
@@ -627,7 +626,7 @@ class SudokuTableQWidget(QWidget):
                 break
         return nonet_row, nonet_column
 
-    def number_match_rules_of_sudoku(self, number, row, column):
+    def test_if_number_match_rules_of_sudoku(self, number, row, column):
         match = True
         nonet_row, nonet_column = self._get_nonet_indexes(row, column)
         if (number in self.get_numbers_in_row(row) or
@@ -635,6 +634,9 @@ class SudokuTableQWidget(QWidget):
                 number in self.get_numbers_in_nonet(nonet_row, nonet_column)):
             match = False
         return match
+
+    def solve_the_sudoku_using_backtracking(self):
+        pass
 
     # signal handlers
     def _line_edit_change_handler(self, lineEdit):
