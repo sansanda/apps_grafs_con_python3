@@ -1,6 +1,6 @@
 import logging
 from enum import IntEnum
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
@@ -21,6 +21,8 @@ class GameState(IntEnum):
 
 class SudokuForm(QtWidgets.QWidget):
 
+    sudoku_table_updated = pyqtSignal(list)
+
     def __init__(self,
                  play_time=60,
                  interval=1000,
@@ -28,6 +30,7 @@ class SudokuForm(QtWidgets.QWidget):
 
         QtWidgets.QWidget.__init__(self)
         logging.info("Sudoku    : Initiating....")
+        self.sudoku_table = None
         self.play_time = play_time
         self.interval = interval
         self.remaining_time = self.play_time
@@ -36,14 +39,24 @@ class SudokuForm(QtWidgets.QWidget):
         # # Signals and Slots
         # self.ui.start_pause_pushButton.clicked.connect(self.start_pause_handler)
         # self.ui.reset_game_pushButton.clicked.connect(self.reset)
-        # self.ui.buttons_array.text_available.connect(self.text_available_handler)
+        # self.ui.sudoku_table.table_updated_signal.connect(self.updated_ui_sudoku_table_handler)
+
+        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self.on_sudoku_table_table_updated)
 
         self.timerTickerWorker = None
         self.timer_worker_thread = None
 
         self.status = GameState.INITIATED
         self._update_ui()
+
+        QtCore.QMetaObject.connectSlotsByName(self)
+
         logging.info("Sudoku    : Initiated.")
+
+    def on_sudoku_table_table_updated(self, updated_sudoku_table):
+        self.sudoku_table = updated_sudoku_table
+        print('hiiii')
+        print(self.sudoku_table)
 
     def start_pause_handler(self):
         pass
