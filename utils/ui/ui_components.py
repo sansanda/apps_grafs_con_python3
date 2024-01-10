@@ -455,7 +455,6 @@ class SudokuTableQWidget(QWidget):
         self.setObjectName("SudokuTableWidget")
 
         self.n_rows = self.n_columns = 9
-        self.sudoku_table = [[None for _ in range(0, self.n_columns, 1)] for _ in range(0, self.n_rows, 1)]
         self.ui_table_rows_reserved_for_lines = [3, 7]
         self.ui_table_columns_reserved_for_lines = [3, 7]
         self.ui_table_rows_reserved_for_numbers = [0, 1, 2, 4, 5, 6, 8, 9, 10]
@@ -516,42 +515,13 @@ class SudokuTableQWidget(QWidget):
                 self.gridLayout.addWidget(lineEdit, r, c, 1, 1)
 
         self.setLayout(self.gridLayout)
-        self.reset_ui_table()
+        parent.sudoku_table_updated_signal.connect(self.on_sudoku_table_updated)
 
-    def reset_ui_table(self):
-        for row in range(0, self.n_rows):
-            for column in range(0, self.n_columns):
-                self._insert_number_at_ui_table_pos(row, column, None)
+    def on_sudoku_table_updated(self, sudoku_table_updated):
+        # signal handler
+        self._update_ui_sudoku_table(sudoku_table_updated)
 
-    def _insert_random_numbers_in_ui_table_in_random_positions(self, n_numbers):
-        for _ in range(0, n_numbers, 1):
-            while True:
-                random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
-                random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
-                random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
-                if (self.test_if_number_match_rules_of_sudoku(random_number, random_row, random_column) and
-                        (not self.get_number_at_ui_table_pos(random_row, random_column))):
-                    self._insert_number_at_ui_table_pos(random_row, random_column, random_number)
-                    break
-
-    def _insert_number_at_ui_table_pos(self, row, column, number):
-        """
-        Insert a number in the row and column done by ther parameters.
-        From the function the sudoku table is a 9x9 numbers table
-        :param row: the row where to insert (0 to 8 positions)
-        :param column: the column where to insert (0 to 8 positions)
-        :param number: the number to insert
-        :return: None
-        """
-        if (number not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS or
-                row not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1] or
-                column not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
-            return
-        lineEdit = self.gridLayout.itemAtPosition(self.ui_table_rows_reserved_for_numbers[row],
-                                                  self.ui_table_columns_reserved_for_numbers[column]).widget()
-        lineEdit.setText(str(number))
-
-    def get_number_at_ui_table_pos(self, row, column):
+    def _insert_value_at_ui_table_pos(self, row, column, value):
         """
         Gets the number in the row and column indicated by ther parameters.
         Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
@@ -561,83 +531,11 @@ class SudokuTableQWidget(QWidget):
         :return: the number at the position given by the row and column parameters or
         None if was impossible to obtain the number
         """
-        number = None
-        if (row not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1] or
-                column not in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
-            pass
-        else:
-            text = self.gridLayout.itemAtPosition(self.ui_table_rows_reserved_for_numbers[row],
-                                                  self.ui_table_columns_reserved_for_numbers[column]).widget().text()
-            try:
-                number = int(text)
-            except ValueError:
-                pass
-        return number
-
-    def get_numbers_in_ui_table_row(self, row):
-        """
-        Gets the numbers in the row indicated by the parameter.
-        Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
-        in the range of [1:9] inc.
-        :param row: the row where there are the numbers (0 to 8 positions)
-        :return: a list containing the numbers of the row.
-        The List can be full of None if the row was totally empty --> ""
-        """
-        row_numbers = []
-        if row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-            for column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                row_numbers.append(self.get_number_at_ui_table_pos(row, column))
-        return row_numbers
-
-    def get_numbers_in_ui_table_column(self, column):
-        """
-        Gets the numbers in the column indicated by the parameter.
-        Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
-        in the range of [1:9] inc.
-        :param column: the column where there are the numbers (0 to 8 positions)
-        :return: a list containing the numbers of the column.
-        The List can be full of None if the column was totally empty --> ""
-        """
-        column_numbers = []
-        if column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-            for row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]:
-                column_numbers.append(self.get_number_at_ui_table_pos(row, column))
-        return column_numbers
-
-    def get_numbers_in_ui_table_nonet(self, nonet_row, nonet_column):
-        nonet_numbers = []
-        if (nonet_column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[0:3] and
-                nonet_row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[0:3]):
-            for row in self.nonets_table_rows[nonet_row]:
-                for column in self.nonets_table_columns[nonet_column]:
-                    nonet_numbers.append(
-                        self.get_number_at_ui_table_pos(row, column)
-                    )
-        return nonet_numbers
-
-    def _get_nonet_indexes(self, row, column):
-        nonet_row = nonet_column = None
-        for row_index in range(0, len(self.nonets_table_rows)):
-            if row in self.nonets_table_rows[row_index]:
-                nonet_row = row_index
-                break
-        for column_index in range(0, len(self.nonets_table_columns)):
-            if column in self.nonets_table_columns[column_index]:
-                nonet_column = column_index
-                break
-        return nonet_row, nonet_column
-
-    def test_if_number_match_rules_of_sudoku(self, number, row, column):
-        match = True
-        nonet_row, nonet_column = self._get_nonet_indexes(row, column)
-        if (number in self.get_numbers_in_ui_table_row(row) or
-                number in self.get_numbers_in_ui_table_column(column) or
-                number in self.get_numbers_in_ui_table_nonet(nonet_row, nonet_column)):
-            match = False
-        return match
-
-    def solve_the_sudoku_using_backtracking(self):
-        pass
+        if (row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1] or
+                column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
+            lineEdit = self.gridLayout.itemAtPosition(self.ui_table_rows_reserved_for_numbers[row],
+                                                      self.ui_table_columns_reserved_for_numbers[column]).widget()
+            lineEdit.setText(str(value))
 
     # signal handlers
     def _line_edit_change_handler(self, lineEdit):
@@ -659,22 +557,29 @@ class SudokuTableQWidget(QWidget):
             # emit signal with the 2d table representation of the ui table
             pass
         else:
-            lineEdit.setText(str(1))
+            lineEdit.setText(None)
         lineEdit.selectAll()
         self.ui_sudoku_table_updated.emit(self._convert_sudoku_ui_table_to_2D_numbers_list())
 
-    def _update_ui_table_handler(self, sudoku_table):
+    def _update_ui_sudoku_table(self, sudoku_table):
         # from sudoku table to ui
         for row in range(0, self.n_rows, 1):
             for column in range(0, self.n_columns, 1):
-                self._insert_number_at_ui_table_pos(row, column, sudoku_table[row][column])
+                self._insert_value_at_ui_table_pos(row, column, sudoku_table[row][column])
 
     def _convert_sudoku_ui_table_to_2D_numbers_list(self):
         # from ui to 2D numbers list
         list = [[None for _ in range(0, self.n_columns, 1)] for _ in range(0, self.n_rows, 1)]
         for row in range(0, self.n_rows, 1):
             for column in range(0, self.n_columns, 1):
-                list[row][column] = self.get_number_at_ui_table_pos(row, column)
+                line_edit = self.gridLayout.itemAtPosition(self.ui_table_rows_reserved_for_numbers[row],
+                                                           self.ui_table_columns_reserved_for_numbers[column]).widget()
+                value = None
+                try:
+                    value = int(line_edit.text())
+                except ValueError:
+                    pass
+                list[row][column] = value
         return list
 
 

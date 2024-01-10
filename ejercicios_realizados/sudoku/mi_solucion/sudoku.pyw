@@ -1,4 +1,5 @@
 import logging
+import random
 from enum import IntEnum
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
@@ -6,6 +7,7 @@ from PyQt5.QtWidgets import QApplication
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 import sys
+
 
 class GameState(IntEnum):
     """
@@ -20,8 +22,16 @@ class GameState(IntEnum):
 
 
 class SudokuForm(QtWidgets.QWidget):
-
-    sudoku_table_updated = pyqtSignal(list)
+    sudoku_table_updated_signal = pyqtSignal(list)
+    N_ROWS = 9
+    N_COLUMNS = 9
+    ONE_DIGIT_INT_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    SUDOKU_TABLE_NONETS_ROWS = [[0, 1, 2],
+                                [3, 4, 5],
+                                [6, 7, 8]]
+    SUDOKU_TABLE_NONETS_COLUMNS = [[0, 1, 2],
+                                   [3, 4, 5],
+                                   [6, 7, 8]]
 
     def __init__(self,
                  play_time=60,
@@ -30,7 +40,7 @@ class SudokuForm(QtWidgets.QWidget):
 
         QtWidgets.QWidget.__init__(self)
         logging.info("Sudoku    : Initiating....")
-        self.sudoku_table = None
+        self.sudoku_table = [[None for _ in range(0, self.N_COLUMNS, 1)] for _ in range(0, self.N_ROWS, 1)]
         self.play_time = play_time
         self.interval = interval
         self.remaining_time = self.play_time
@@ -41,7 +51,7 @@ class SudokuForm(QtWidgets.QWidget):
         # self.ui.reset_game_pushButton.clicked.connect(self.reset)
         # self.ui.sudoku_table.table_updated_signal.connect(self.updated_ui_sudoku_table_handler)
 
-        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self.on_sudoku_table_table_updated)
+        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self.on_ui_sudoku_table_updated)
 
         self.timerTickerWorker = None
         self.timer_worker_thread = None
@@ -49,14 +59,18 @@ class SudokuForm(QtWidgets.QWidget):
         self.status = GameState.INITIATED
         self._update_ui()
 
-        QtCore.QMetaObject.connectSlotsByName(self)
+        # QtCore.QMetaObject.connectSlotsByName(self)
 
         logging.info("Sudoku    : Initiated.")
 
-    def on_sudoku_table_table_updated(self, updated_sudoku_table):
+        self.reset_sudoku_table()
+        self.sudoku_table_updated_signal.emit(self.sudoku_table)
+        self._insert_random_numbers_in_sudoku_table_in_random_positions(self.sudoku_table,20)
+        self.sudoku_table_updated_signal.emit(self.sudoku_table)
+        self.solve_the_sudoku_using_backtracking(0, 0, self.sudoku_table.copy())
+
+    def on_ui_sudoku_table_updated(self, updated_sudoku_table):
         self.sudoku_table = updated_sudoku_table
-        print('hiiii')
-        print(self.sudoku_table)
 
     def start_pause_handler(self):
         pass
@@ -156,6 +170,86 @@ class SudokuForm(QtWidgets.QWidget):
         if self.status == GameState.OVER:
             self.ui.ui_over_status()
 
+    #########################################################################################################
+    def reset_sudoku_table(self):
+        for row in range(0, self.N_ROWS):
+            for column in range(0, self.N_COLUMNS):
+                self.sudoku_table[row][column] = None
+
+    def _insert_random_numbers_in_sudoku_table_in_random_positions(self, sudoku_table, n_numbers):
+        for _ in range(0, n_numbers, 1):
+            while True:
+                random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
+                if (self.test_if_number_match_rules_of_sudoku(sudoku_table, random_number, random_row, random_column) and
+                        (not self.sudoku_table[random_row][random_column])):
+                    self.sudoku_table[random_row][random_column] = random_number
+                    break
+
+    def test_if_number_match_rules_of_sudoku(self, sudoku_table, number, row, column):
+        match = True
+        nonet_row, nonet_column = self._get_nonet_indexes(row, column)
+        if (number in sudoku_table[row] or
+                number in [r[column] for r in sudoku_table] or
+                number in self._get_numbers_in_sudoku_table_nonet(sudoku_table, nonet_row, nonet_column)):
+            match = False
+        return match
+
+    def solve_the_sudoku_using_backtracking(self, row, column, sudoku_table_copy):
+        possible_solution = list()
+        if not sudoku_table_copy[row][column] or isinstance(sudoku_table_copy[row][column], str):
+            if not sudoku_table_copy[row][column]:
+                # if you are here is because the cell contains None
+                sudoku_table_copy[row][column] = str(1)
+
+             # or a temporal number as str
+            # for number in self.ONE_DIGIT_INT_NUMBERS[1:]:
+            #     possible_solution.append(100*row+10*column+number)
+        else:
+            # if you are here is because the cell already contains a number
+            next_row, next_column = _get_next_position(row. column)
+
+    def _get_next_position(self, actual_row, actual_column):
+        next_row = next_column = 0
+        if actual_row < self.N_ROWS - 1:
+            if actual_column == self.N_COLUMNS - 1:
+                next_column = 0
+                next_row = actual_row + 1
+            else:
+                next_column = actual_column + 1
+        else:
+            
+
+
+    #########################################################################################################
+
+    def _get_nonet_indexes(self, row, column):
+        nonet_row = nonet_column = None
+        for row_index in range(0, len(self.SUDOKU_TABLE_NONETS_ROWS)):
+            if row in self.SUDOKU_TABLE_NONETS_ROWS[row_index]:
+                nonet_row = row_index
+                break
+        for column_index in range(0, len(self.SUDOKU_TABLE_NONETS_COLUMNS)):
+            if column in self.SUDOKU_TABLE_NONETS_COLUMNS[column_index]:
+                nonet_column = column_index
+                break
+        return nonet_row, nonet_column
+
+    def _get_numbers_in_sudoku_table_nonet(self, sudoku_table, nonet_row, nonet_column):
+        nonet_numbers = []
+        if (nonet_column in self.ONE_DIGIT_INT_NUMBERS[0:3] and
+                nonet_row in self.ONE_DIGIT_INT_NUMBERS[0:3]):
+            for row in self.SUDOKU_TABLE_NONETS_ROWS[nonet_row]:
+                for column in self.SUDOKU_TABLE_NONETS_COLUMNS[nonet_column]:
+                    nonet_numbers.append(
+                        sudoku_table[row][column]
+                    )
+        return nonet_numbers
+
+    #########################################################################################################
+
+    #########################################################################################################
     # Events management
     def closeEvent(self, event):
         logging.info("Words_Search: Closing.")
@@ -163,7 +257,6 @@ class SudokuForm(QtWidgets.QWidget):
 
 
 if __name__ == "__main__":
-
     _format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=_format, level=logging.INFO,
                         datefmt="%H:%M:%S")
