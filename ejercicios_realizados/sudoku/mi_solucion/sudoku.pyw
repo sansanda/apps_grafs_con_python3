@@ -210,15 +210,40 @@ class SudokuForm(QtWidgets.QWidget):
             # if you are here is because the cell already contains a number
             next_row, next_column = _get_next_position(row. column)
 
+    def _get_previous_position(self, actual_row, actual_column):
+        previous_row= 0
+        previous_column = 0
+        if actual_row > 0:
+            if actual_column == 0:
+                previous_row = actual_row - 1
+                next_column = self.N_COLUMNS - 1
+            else:
+                previous_row = actual_row 
+                next_column = actual_column - 1
+        else:
+            previous_row = actual_row
+            if actual_column == 0:
+                next_column = actual_column
+            else:
+                next_column = actual_column - 1
+    
     def _get_next_position(self, actual_row, actual_column):
-        next_row = next_column = 0
+        next_row = 0
+        next_column = 0
         if actual_row < self.N_ROWS - 1:
             if actual_column == self.N_COLUMNS - 1:
-                next_column = 0
                 next_row = actual_row + 1
+                next_column = 0
             else:
+                next_row = actual_row
                 next_column = actual_column + 1
         else:
+            next_row = actual_row
+            if actual_column < self.N_COLUMS - 1:
+                next_column = actual_column + 1
+            else:
+                next_column = actual_column
+                
             
 
 
