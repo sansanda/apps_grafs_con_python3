@@ -247,18 +247,19 @@ class SudokuForm(QtWidgets.QWidget):
                 return False
 
     def _solve_the_sudoku_using_backtracking(self, sudoku_table_copy, from_row_index, from_column_index):
-        if (not sudoku_table_copy[from_row_index][from_column_index] or
+        if (sudoku_table_copy[from_row_index][from_column_index] is None or
                 isinstance(sudoku_table_copy[from_row_index][from_column_index], str)):
-            # if you are here is because the sudoku_table cell conatins or None or a str int value
-            if not sudoku_table_copy[from_row_index][from_column_index]:
+            # if you are here is because the sudoku_table cell contains or None or a str int value
+            if sudoku_table_copy[from_row_index][from_column_index] is None:
                 # if you are here is because the sudoku_table cell contains None
-                number = 1
-                if self._test_if_number_match_rules_of_sudoku(sudoku_table_copy,
-                                                              number, from_row_index, from_column_index):
+                sudoku_table_copy[from_row_index][from_column_index] = 1
+                if self._test_if_sudoku_table_match_rules_of_sudoku(sudoku_table_copy,
+                                                                    from_row_index,
+                                                                    from_column_index):
+                    sudoku_table_copy[from_row_index][from_column_index] = str(1)
                     next_row_index, next_column_index = (
                         self._get_sudoku_table_next_coordinates(from_row_index, from_column_index))
-                    sudoku_table_copy[from_row_index][from_column_index] = str(number)
-                    self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
+                    return self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
                 else:
                     sudoku_table_copy[from_row_index][from_column_index] = None
                     previous_row_index, previous_column_index = (
