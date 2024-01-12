@@ -65,9 +65,10 @@ class SudokuForm(QtWidgets.QWidget):
 
         self.reset_sudoku_table()
         self.sudoku_table_updated_signal.emit(self.sudoku_table)
-        self._insert_random_numbers_in_sudoku_table_in_random_positions(self.sudoku_table,20)
+        self._insert_random_numbers_in_sudoku_table_in_random_positions(self.sudoku_table, 20)
         self.sudoku_table_updated_signal.emit(self.sudoku_table)
-        self.solve_the_sudoku_using_backtracking(0, 0, self.sudoku_table.copy())
+        print(self._test_if_sudoku_table_match_rules_of_sudoku(self.sudoku_table, 0, 0))
+        # self._solve_the_sudoku_using_backtracking(self.sudoku_table.copy(), 0, 0)
 
     def on_ui_sudoku_table_updated(self, updated_sudoku_table):
         self.sudoku_table = updated_sudoku_table
@@ -181,13 +182,15 @@ class SudokuForm(QtWidgets.QWidget):
             while True:
                 random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
                 random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                while self.sudoku_table[random_row][random_column] is not None:
+                    random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                    random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
                 random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
-                if (self.test_if_number_match_rules_of_sudoku(sudoku_table, random_number, random_row, random_column) and
-                        (not self.sudoku_table[random_row][random_column])):
+                if self._test_if_number_match_rules_of_sudoku(sudoku_table, random_number, random_row, random_column):
                     self.sudoku_table[random_row][random_column] = random_number
                     break
 
-    def test_if_number_match_rules_of_sudoku(self, sudoku_table, number, row, column):
+    def _test_if_number_match_rules_of_sudoku(self, sudoku_table, number, row, column):
         match = True
         nonet_row, nonet_column = self._get_nonet_indexes(row, column)
         if (number in sudoku_table[row] or
@@ -196,56 +199,123 @@ class SudokuForm(QtWidgets.QWidget):
             match = False
         return match
 
-    def solve_the_sudoku_using_backtracking(self, row, column, sudoku_table_copy):
-        possible_solution = list()
-        if not sudoku_table_copy[row][column] or isinstance(sudoku_table_copy[row][column], str):
-            if not sudoku_table_copy[row][column]:
-                # if you are here is because the cell contains None
-                sudoku_table_copy[row][column] = str(1)
+    def _test_if_sudoku_table_match_rules_of_sudoku(self, sudoku_table, from_row_index, from_column_index):
+        if sudoku_table[from_row_index][from_column_index] is None:
+            # if you are here is because the sudoku table cell is None
+            next_row_index, next_column_index = self._get_sudoku_table_next_coordinates(sudoku_table,
+                                                                                        from_row_index,
+                                                                                        from_column_index)
+            if next_row_index == from_row_index and next_column_index == from_column_index:
+                return True
+            else:
+                return self._test_if_sudoku_table_match_rules_of_sudoku(sudoku_table, next_row_index, next_column_index)
+        else:
+            # if you are here is because the sudoku table cell contains a number
+            if not self._test_if_number_match_rules_of_sudoku(sudoku_table,
+                                                              int(sudoku_table[from_row_index][from_column_index]),
+                                                              from_row_index,
+                                                              from_column_index):
+                return False
+            else:
+                next_row_index, next_column_index = self._get_sudoku_table_next_coordinates(sudoku_table,
+                                                                                            from_row_index,
+                                                                                            from_column_index)
+                if next_row_index == from_row_index and next_column_index == from_column_index:
+                    return True
+                else:
+                    return self._test_if_sudoku_table_match_rules_of_sudoku(sudoku_table,
+                                                                            next_row_index,
+                                                                            next_column_index)
 
-             # or a temporal number as str
-            # for number in self.ONE_DIGIT_INT_NUMBERS[1:]:
-            #     possible_solution.append(100*row+10*column+number)
+    def _solve_the_sudoku_using_backtracking(self, sudoku_table_copy, from_row_index, from_column_index):
+        if (not sudoku_table_copy[from_row_index][from_column_index] or
+                isinstance(sudoku_table_copy[from_row_index][from_column_index], str)):
+            # if you are here is because the sudoku_table cell conatins or None or a str int value
+            if not sudoku_table_copy[from_row_index][from_column_index]:
+                # if you are here is because the sudoku_table cell contains None
+                number = 1
+                if self._test_if_number_match_rules_of_sudoku(sudoku_table_copy,
+                                                              number, from_row_index, from_column_index):
+                    next_row_index, next_column_index = (
+                        self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index, from_column_index))
+                    sudoku_table_copy[from_row_index][from_column_index] = str(number)
+                    self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
+                else:
+                    sudoku_table_copy[from_row_index][from_column_index] = None
+                    previous_row_index, previous_column_index = (
+                        self._get_sudoku_table_previous_coordinates(sudoku_table_copy,
+                                                                    from_row_index, from_column_index))
+                    self._solve_the_sudoku_using_backtracking(sudoku_table_copy,
+                                                              previous_row_index, previous_column_index)
+            else:
+                # if you are here is because the sudoku_table cell contains a str int value
+                # then we have to check if the sudoku_table_copy match the rules of the sudoku
+                number = int(sudoku_table_copy[from_row_index][from_column_index])
+                if number == self.ONE_DIGIT_INT_NUMBERS[-1]:
+                    # we can't continue increasing the number
+                    next_row_index, next_column_index = (
+                        self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index, from_column_index))
+                    self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
+                else:
+                    if self._test_if_number_match_rules_of_sudoku(sudoku_table_copy,
+                                                                  number + 1, from_row_index, from_column_index):
+                        sudoku_table_copy[from_row_index][from_column_index] = str(number)
+                        next_row_index, next_column_index = (
+                            self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index,
+                                                                    from_column_index))
+                        self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
+                    else:
+                        sudoku_table_copy[from_row_index][from_column_index] = None
+                        previous_row_index, previous_column_index = (
+                            self._get_sudoku_table_previous_coordinates(sudoku_table_copy,
+                                                                        from_row_index, from_column_index))
+                        self._solve_the_sudoku_using_backtracking(sudoku_table_copy,
+                                                                  previous_row_index, previous_column_index)
+
         else:
             # if you are here is because the cell already contains a number
-            next_row, next_column = _get_next_position(row. column)
+            next_row_index, next_column_index = (
+                self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index, from_column_index))
+            self._solve_the_sudoku_using_backtracking(sudoku_table_copy,
+                                                      next_row_index, next_column_index)
 
-    def _get_previous_position(self, actual_row, actual_column):
-        previous_row= 0
-        previous_column = 0
-        if actual_row > 0:
-            if actual_column == 0:
-                previous_row = actual_row - 1
+    def _get_sudoku_table_previous_coordinates(self, sudoku_table, actual_row_index, actual_column_index):
+        previous_row_index = 0
+        previous_column_index = 0
+        if actual_row_index > 0:
+            if actual_column_index == 0:
+                previous_row_index = actual_row_index - 1
                 next_column = self.N_COLUMNS - 1
             else:
-                previous_row = actual_row 
-                next_column = actual_column - 1
+                previous_row_index = actual_row_index
+                next_column = actual_column_index - 1
         else:
-            previous_row = actual_row
-            if actual_column == 0:
-                next_column = actual_column
+            previous_row_index = actual_row_index
+            if actual_column_index == 0:
+                next_column = actual_column_index
             else:
-                next_column = actual_column - 1
-    
-    def _get_next_position(self, actual_row, actual_column):
-        next_row = 0
-        next_column = 0
-        if actual_row < self.N_ROWS - 1:
-            if actual_column == self.N_COLUMNS - 1:
-                next_row = actual_row + 1
-                next_column = 0
-            else:
-                next_row = actual_row
-                next_column = actual_column + 1
-        else:
-            next_row = actual_row
-            if actual_column < self.N_COLUMS - 1:
-                next_column = actual_column + 1
-            else:
-                next_column = actual_column
-                
-            
+                next_column = actual_column_index - 1
+        return previous_row_index, previous_column_index
+        # return sudoku_table[previous_row_index][previous_column_index]
 
+    def _get_sudoku_table_next_coordinates(self, sudoku_table, actual_row_index, actual_column_index):
+        next_row_index = 0
+        next_column_index = 0
+        if actual_row_index < self.N_ROWS - 1:
+            if actual_column_index == self.N_COLUMNS - 1:
+                next_row_index = actual_row_index + 1
+                next_column_index = 0
+            else:
+                next_row_index = actual_row_index
+                next_column_index = actual_column_index + 1
+        else:
+            next_row_index = actual_row_index
+            if actual_column_index < self.N_COLUMS - 1:
+                next_column_index = actual_column_index + 1
+            else:
+                next_column_index = actual_column_index
+        return next_row_index, next_column_index
+        # return sudoku_table[next_row_index][next_column_index]
 
     #########################################################################################################
 
