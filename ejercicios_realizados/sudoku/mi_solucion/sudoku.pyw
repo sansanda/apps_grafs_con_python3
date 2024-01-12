@@ -8,6 +8,8 @@ from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 import sys
 
+_format = "%(asctime)s: %(message)s"
+logging.basicConfig(format=_format, level=logging.DEBUG, datefmt="%H:%M:%S")
 
 class GameState(IntEnum):
     """
@@ -68,7 +70,7 @@ class SudokuForm(QtWidgets.QWidget):
         self._insert_random_numbers_in_sudoku_table_in_random_positions(self.sudoku_table, 20)
         self.sudoku_table_updated_signal.emit(self.sudoku_table)
         print(self._test_if_sudoku_table_match_rules_of_sudoku(self.sudoku_table, 0, 0))
-        # self._solve_the_sudoku_using_backtracking(self.sudoku_table.copy(), 0, 0)
+        # # self._solve_the_sudoku_using_backtracking(self.sudoku_table.copy(), 0, 0)
 
     def on_ui_sudoku_table_updated(self, updated_sudoku_table):
         self.sudoku_table = updated_sudoku_table
@@ -190,20 +192,40 @@ class SudokuForm(QtWidgets.QWidget):
                     self.sudoku_table[random_row][random_column] = random_number
                     break
 
+    def _number_appearances_is_in_sudoku_table_row(self, sudoku_table, number, row):
+        number_appearances = 0
+        for n in sudoku_table[row]:
+            if n == number:
+                number_appearances = number_appearances + 1
+        return number_appearances
+
+    def _number_appearances_in_sudoku_table_column(self, sudoku_table, number, column):
+        number_appearances = 0
+        for n in [r[column] for r in sudoku_table]:
+            if n == number:
+                number_appearances = number_appearances + 1
+        return number_appearances
+
+    def _number_appearances_in_sudoku_table_nonet(self, sudoku_table, number, row, column):
+        number_appearances = 0
+        nonet_row, nonet_column = self._get_nonet_indexes(row, column)
+        for n in self._get_numbers_in_sudoku_table_nonet(sudoku_table, nonet_row, nonet_column):
+            if n == number:
+                number_appearances = number_appearances + 1
+        return number_appearances
+
     def _test_if_number_match_rules_of_sudoku(self, sudoku_table, number, row, column):
         match = True
-        nonet_row, nonet_column = self._get_nonet_indexes(row, column)
-        if (number in sudoku_table[row] or
-                number in [r[column] for r in sudoku_table] or
-                number in self._get_numbers_in_sudoku_table_nonet(sudoku_table, nonet_row, nonet_column)):
+        if (self._number_appearances_is_in_sudoku_table_row(sudoku_table, number, row) > 1 or
+                self._number_appearances_in_sudoku_table_column(sudoku_table, number, column) > 1 or
+                self._number_appearances_in_sudoku_table_nonet(sudoku_table, number, row, column) > 1):
             match = False
         return match
 
     def _test_if_sudoku_table_match_rules_of_sudoku(self, sudoku_table, from_row_index, from_column_index):
         if sudoku_table[from_row_index][from_column_index] is None:
             # if you are here is because the sudoku table cell is None
-            next_row_index, next_column_index = self._get_sudoku_table_next_coordinates(sudoku_table,
-                                                                                        from_row_index,
+            next_row_index, next_column_index = self._get_sudoku_table_next_coordinates(from_row_index,
                                                                                         from_column_index)
             if next_row_index == from_row_index and next_column_index == from_column_index:
                 return True
@@ -237,14 +259,13 @@ class SudokuForm(QtWidgets.QWidget):
                 if self._test_if_number_match_rules_of_sudoku(sudoku_table_copy,
                                                               number, from_row_index, from_column_index):
                     next_row_index, next_column_index = (
-                        self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index, from_column_index))
+                        self._get_sudoku_table_next_coordinates(from_row_index, from_column_index))
                     sudoku_table_copy[from_row_index][from_column_index] = str(number)
                     self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
                 else:
                     sudoku_table_copy[from_row_index][from_column_index] = None
                     previous_row_index, previous_column_index = (
-                        self._get_sudoku_table_previous_coordinates(sudoku_table_copy,
-                                                                    from_row_index, from_column_index))
+                        self._get_sudoku_table_previous_coordinates(from_row_index, from_column_index))
                     self._solve_the_sudoku_using_backtracking(sudoku_table_copy,
                                                               previous_row_index, previous_column_index)
             else:
@@ -254,53 +275,53 @@ class SudokuForm(QtWidgets.QWidget):
                 if number == self.ONE_DIGIT_INT_NUMBERS[-1]:
                     # we can't continue increasing the number
                     next_row_index, next_column_index = (
-                        self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index, from_column_index))
+                        self._get_sudoku_table_next_coordinates(from_row_index, from_column_index))
                     self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
                 else:
                     if self._test_if_number_match_rules_of_sudoku(sudoku_table_copy,
                                                                   number + 1, from_row_index, from_column_index):
                         sudoku_table_copy[from_row_index][from_column_index] = str(number)
                         next_row_index, next_column_index = (
-                            self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index,
-                                                                    from_column_index))
+                            self._get_sudoku_table_next_coordinates(from_row_index, from_column_index))
                         self._solve_the_sudoku_using_backtracking(sudoku_table_copy, next_row_index, next_column_index)
                     else:
                         sudoku_table_copy[from_row_index][from_column_index] = None
                         previous_row_index, previous_column_index = (
-                            self._get_sudoku_table_previous_coordinates(sudoku_table_copy,
-                                                                        from_row_index, from_column_index))
+                            self._get_sudoku_table_previous_coordinates(from_row_index, from_column_index))
                         self._solve_the_sudoku_using_backtracking(sudoku_table_copy,
                                                                   previous_row_index, previous_column_index)
 
         else:
             # if you are here is because the cell already contains a number
             next_row_index, next_column_index = (
-                self._get_sudoku_table_next_coordinates(sudoku_table_copy, from_row_index, from_column_index))
+                self._get_sudoku_table_next_coordinates(from_row_index, from_column_index))
             self._solve_the_sudoku_using_backtracking(sudoku_table_copy,
                                                       next_row_index, next_column_index)
 
-    def _get_sudoku_table_previous_coordinates(self, sudoku_table, actual_row_index, actual_column_index):
-        previous_row_index = 0
-        previous_column_index = 0
+    def _get_sudoku_table_previous_coordinates(self, actual_row_index, actual_column_index):
+        logging.debug(f"Invoking {self._get_sudoku_table_previous_coordinates.__name__}")
+        logging.debug(f"args: actual_row_index, actual_column_index =  "
+                      f"{actual_row_index, actual_column_index}")
         if actual_row_index > 0:
             if actual_column_index == 0:
                 previous_row_index = actual_row_index - 1
-                next_column = self.N_COLUMNS - 1
+                previous_column_index = self.N_COLUMNS - 1
             else:
                 previous_row_index = actual_row_index
-                next_column = actual_column_index - 1
+                previous_column_index = actual_column_index - 1
         else:
             previous_row_index = actual_row_index
             if actual_column_index == 0:
-                next_column = actual_column_index
+                previous_column_index = actual_column_index
             else:
-                next_column = actual_column_index - 1
+                previous_column_index = actual_column_index - 1
+        logging.debug(f"returned previous_row_index, previous_column_index = {previous_row_index, previous_column_index}")
         return previous_row_index, previous_column_index
-        # return sudoku_table[previous_row_index][previous_column_index]
 
-    def _get_sudoku_table_next_coordinates(self, sudoku_table, actual_row_index, actual_column_index):
-        next_row_index = 0
-        next_column_index = 0
+    def _get_sudoku_table_next_coordinates(self, actual_row_index, actual_column_index):
+        logging.debug(f"Invoking {self._get_sudoku_table_next_coordinates.__name__}")
+        logging.debug(f"args: actual_row_index, actual_column_index =  "
+                      f"{actual_row_index, actual_column_index}")
         if actual_row_index < self.N_ROWS - 1:
             if actual_column_index == self.N_COLUMNS - 1:
                 next_row_index = actual_row_index + 1
@@ -310,12 +331,12 @@ class SudokuForm(QtWidgets.QWidget):
                 next_column_index = actual_column_index + 1
         else:
             next_row_index = actual_row_index
-            if actual_column_index < self.N_COLUMS - 1:
+            if actual_column_index < self.N_COLUMNS - 1:
                 next_column_index = actual_column_index + 1
             else:
                 next_column_index = actual_column_index
+        logging.debug(f"returned next_row_index, next_column_index = {next_row_index, next_column_index}")
         return next_row_index, next_column_index
-        # return sudoku_table[next_row_index][next_column_index]
 
     #########################################################################################################
 
@@ -352,9 +373,9 @@ class SudokuForm(QtWidgets.QWidget):
 
 
 if __name__ == "__main__":
-    _format = "%(asctime)s: %(message)s"
-    logging.basicConfig(format=_format, level=logging.INFO,
-                        datefmt="%H:%M:%S")
+    # _format = "%(asctime)s: %(message)s"
+    # logging.basicConfig(format=_format, level=logging.DEBUG,
+    #                     datefmt="%H:%M:%S")
     play_time = 240  # seconds
     interval = 1000  # ms
 
