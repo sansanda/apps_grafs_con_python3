@@ -4,7 +4,7 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/envs/sudoku_python312_64" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 (apps_grafs_con_python3)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12 (apps_grafs_con_python3) (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

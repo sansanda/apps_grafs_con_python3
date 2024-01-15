@@ -44,8 +44,8 @@ class UiSudokuForm(object):
         self.difficulty_h_layout.setSpacing(40)
         self.difficulty_h_layout.setAlignment(Qt.AlignCenter)
 
-        difficulty_levels = 5
-        for level_number in range(1, difficulty_levels + 1):
+        n_difficulty_levels = 5
+        for level_number in range(1, n_difficulty_levels + 1):
             rb = QRadioButton('Level ' + str(level_number), self.groupBox)
             rb.setObjectName('level' + str(level_number))
             self.difficulty_h_layout.addWidget(rb)
