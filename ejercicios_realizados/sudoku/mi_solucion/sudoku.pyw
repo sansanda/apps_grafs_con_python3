@@ -3,8 +3,8 @@ import random
 import time
 from enum import IntEnum
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import QThread, QObject, pyqtSignal
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QThread, QObject, pyqtSignal, QTimer
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 import sys
@@ -19,11 +19,10 @@ class GameState(IntEnum):
     Auxiliary class create for translating the instance states string into
     an Enum_IntEnum that will help to the app to manage such states.
     """
-    #  TIMER STATUS
-    INITIATED = 1
+    GENERATING_SUDOKU = 0
+    INITIATING = 1
     RUNNING = 2
-    PAUSED = 3
-    OVER = 4
+    CHECKING_SOLUTION = 3
 
 
 class SudokuForm(QtWidgets.QWidget):
@@ -44,43 +43,44 @@ class SudokuForm(QtWidgets.QWidget):
                  parent=None):
 
         QtWidgets.QWidget.__init__(self)
-        logging.info("Sudoku    : Initiating....")
-        self.sudoku_table = [[None for _ in range(0, self.N_COLUMNS, 1)] for _ in range(0, self.N_ROWS, 1)]
+
+        self.ui = UiSudokuForm()
+        self.ui.setupUi(self)
+        self.status = GameState.INITIATING
+        self._update_ui()
+
         self.play_time = play_time
         self.interval = interval
         self.remaining_time = self.play_time
+        self.sudoku_table = [[None for _ in range(0, self.N_COLUMNS, 1)] for _ in range(0, self.N_ROWS, 1)]
+
         self.n_levels_of_difficulty = 6
-        self.ui = UiSudokuForm()
-        self.ui.setupUi(self)
-
-        # Signals and Slots
-        radio_buttons = [self.ui.difficulty_h_layout.itemAt(n).widget()
-                         for n in range(0, self.n_levels_of_difficulty, 1)]
-        for rb in radio_buttons:
-            rb.clicked.connect(lambda foo_param, x=rb: self.on_ui_radio_button_clicked(x))
-
-        # self.ui.start_pause_pushButton.clicked.connect(self.start_pause_handler)
-        # self.ui.reset_game_pushButton.clicked.connect(self.reset)
-        # self.ui.sudoku_table.table_updated_signal.connect(self.updated_ui_sudoku_table_handler)
-
-        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self.on_ui_sudoku_table_updated)
-
-        self.timerTickerWorker = None
-        self.timer_worker_thread = None
-
-        self.status = GameState.INITIATED
-        self._update_ui()
-
         self.difficulty_level = 1
         self.N_CELLS_HIDE_INCREMENT = 10
         self.N_OF_TOTAL_CELLS = self.N_ROWS * self.N_COLUMNS
         self.n_cells_to_show = 60 - self.N_CELLS_HIDE_INCREMENT * (self.difficulty_level - 1)
         self.n_cells_to_hide = self.N_OF_TOTAL_CELLS - self.n_cells_to_show
 
+        # Signals and Slots
+        radio_buttons = [self.ui.difficulty_h_layout.itemAt(n).widget()
+                         for n in range(0, self.n_levels_of_difficulty, 1)]
+        for rb in radio_buttons:
+            rb.clicked.connect(lambda foo_param, x=rb: self.on_ui_radio_button_clicked(x))
+        self.ui.comprobar_solucion_pushButton.clicked.connect(self.on_comprobar_solucion_pushbutton_clicked)
+        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self.on_ui_sudoku_table_updated)
+
+        self.timerTickerWorker = None
+        self.timer_worker_thread = None
+
+        self.status = GameState.GENERATING_SUDOKU
+        self._update_ui()
+
+        self.timer = QtCore.QTimer()
+        self.timer.singleShot(2000, self._generate_and_show_sudoku_table)
+
+    def _generate_and_show_sudoku_table(self):
         self.sudoku_table = self.reset_sudoku_table(self.sudoku_table)
-        self.sudoku_table_updated_signal.emit(self.sudoku_table)
         self.sudoku_table = self._insert_random_numbers_in_random_positions(self.sudoku_table, 20)
-        self.sudoku_table_updated_signal.emit(self.sudoku_table)
         self.sudoku_table_solved = self._solve_the_sudoku(copy.deepcopy(self.sudoku_table),
                                                           0,
                                                           0,
@@ -88,7 +88,29 @@ class SudokuForm(QtWidgets.QWidget):
                                                           10000)
         self.sudoku_table = self._hide_cells_randomly(copy.deepcopy(self.sudoku_table_solved), self.n_cells_to_hide)
         self.sudoku_table_updated_signal.emit(self.sudoku_table)
-        logging.info("Sudoku    : Initiated.")
+
+        self.status = GameState.RUNNING
+        self._update_ui()
+
+    def on_comprobar_solucion_pushbutton_clicked(self):
+        self.status = GameState.CHECKING_SOLUTION
+        self._update_ui()
+
+        if self.sudoku_table == self.sudoku_table_solved:
+            while not QMessageBox.question(self,
+                                           'Checking the proposed solution!!!!!',
+                                           'Congrats!!! You Win!!!',
+                                           QMessageBox.Yes) == QMessageBox.Yes:
+                pass
+        else:
+            while not QMessageBox.question(self,
+                                           'Checking the proposed solution!!!!!',
+                                           'Sorry!!! There is something wrong with your proposition!!!',
+                                           QMessageBox.Yes) == QMessageBox.Yes:
+                pass
+
+        self.status = GameState.RUNNING
+        self._update_ui()
 
     def on_ui_radio_button_clicked(self, radio_button):
         try:
@@ -106,120 +128,26 @@ class SudokuForm(QtWidgets.QWidget):
 
         if not (self.difficulty_level == actual_difficulty_level):
             # the difficulty level has changed
-            self.sudoku_table = self.reset_sudoku_table(self.sudoku_table)
-            self.sudoku_table = self._insert_random_numbers_in_random_positions(self.sudoku_table, 20)
-            self.sudoku_table_solved = self._solve_the_sudoku(copy.deepcopy(self.sudoku_table),
-                                                              0,
-                                                              0,
-                                                              0,
-                                                              10000)
+            self.status = GameState.GENERATING_SUDOKU
+            self._update_ui()
             self.n_cells_to_show = 60 - self.N_CELLS_HIDE_INCREMENT * (self.difficulty_level - 1)
             self.n_cells_to_hide = self.N_OF_TOTAL_CELLS - self.n_cells_to_show
-            self.sudoku_table = self._hide_cells_randomly(copy.deepcopy(self.sudoku_table_solved), self.n_cells_to_hide)
-            self.sudoku_table_updated_signal.emit(self.sudoku_table)
+            self.timer.singleShot(1000, self._generate_and_show_sudoku_table)
         else:
             self.sudoku_table_updated_signal.emit(self.sudoku_table)
 
     def on_ui_sudoku_table_updated(self, updated_sudoku_table):
         self.sudoku_table = updated_sudoku_table
 
-    def start_pause_handler(self):
-        pass
-        # game running
-        # if self.status == GameState.INITIATED:
-        #     self.words_to_find = random.sample(self.available_words, self.n_words_to_find)
-        #     self.ui.buttons_array.hide_words(self.words_to_find, mark_word=self.mark_words)
-        #     self.ui.buttons_array.random_populate_all_buttons(overwrite=False)
-        #     self.ui.buttons_array.config_buttons_as(buttons_to_config='all', option='enable', enable=True)
-        #     self.ui.list_of_words_to_find.setText(
-        #         self.ui.list_of_words_to_find.text() + '\n\n' + ' -- '.join(self.words_to_find)
-        #     )
-        #     # Step 2: Create a QThread object for managing timer
-        #     logging.info("Words_Search    : Creating the timer thread...")
-        #     self.timer_worker_thread = QThread()
-        #     # Step 3: Create a worker object
-        #     self.timerTickerWorker = TimerTickerWorker(self.interval, self.update_remaining_time)
-        #     # Step 4: Move worker to the thread
-        #     self.timerTickerWorker.moveToThread(self.timer_worker_thread)
-        #     # Step 5: Connect signals and slots
-        #     # # QObject::startTimer: Timers cannot be started from another thread
-        #     # self.timer_worker_thread.started.connect(self.timerTickerWorker.run)
-        #     self.timer_worker_thread.finished.connect(self.timerTickerWorker._quit)
-        #     self.timer_worker_thread.finished.connect(self.timer_worker_thread.deleteLater)
-        #     self.timer_worker_thread.start()
-        #     logging.info("WordsMatchingWidget    : Timer thread created.")
-        #     self.status = GameState.RUNNING
-        #     self._update_ui()
-        #     self.timerTickerWorker.run()
-        # elif self.status == GameState.RUNNING:
-        #     self.status = GameState.PAUSED
-        #     self._update_ui()
-        #     self.timerTickerWorker.pause()
-        # elif self.status == GameState.PAUSED:
-        #     self.status = GameState.RUNNING
-        #     self._update_ui()
-        #     self.timerTickerWorker.run()
-
-    def pause(self):
-        # game paused
-        logging.info("Sudoku    : Pausing.")
-        # self.timerTickerWorker.pause()
-        self.status = GameState.PAUSED
-        self._update_ui()
-        logging.info("Sudoku    : Paused.")
-
-    def reset(self):
-        logging.info("Words_Search    : Reseting.")
-        # self.timerTickerWorker.pause()
-        self.status = GameState.INITIATED
-        # self.timer_worker_thread.quit()
-        # self.timerTickerWorker = None
-        self.remaining_time = self.play_time
-        self._update_ui()
-        logging.info("Words_Search    : Reset.")
-
-    def over(self):
-        logging.info("Words_Search    : Game is over.")
-        # self.timerTickerWorker.pause()
-        self.status = GameState.OVER
-        self._update_ui()
-
-    def _check_finish(self):
-        pass
-        # if int(self.remaining_time) > 0:
-        #     if self.found_words == len(self.words_to_find):
-        #         self.over()
-        #         while not QMessageBox.question(self,
-        #                                        'Finish Game!!!!!',
-        #                                        'Congrats!!! You Win!!!',
-        #                                        QMessageBox.Yes) == QMessageBox.Yes:
-        #             pass
-        #         self.reset()
-        # else:
-        #     self.over()
-        #     while not QMessageBox.question(self,
-        #                                    'Time is over!!!!!',
-        #                                    'Sorry!!! You Lose!!! ',
-        #                                    QMessageBox.Yes) == QMessageBox.Yes:
-        #         pass
-        #     self.reset()
-
-    # UI updating
-    def update_remaining_time(self):
-        logging.debug("Updating remaining time...")
-        # self.remaining_time = self.remaining_time - 1
-        # self.ui.remaining_time_label.setText("Remaining Time: " + str(self.remaining_time))
-        # self._check_finish()
-
     def _update_ui(self):
-        if self.status == GameState.INITIATED:
-            self.ui.ui_init_status(self.remaining_time)
+        if self.status == GameState.GENERATING_SUDOKU:
+            self.ui.ui_generating_sudoku_status()
+        if self.status == GameState.INITIATING:
+            self.ui.ui_initiating_status()
         if self.status == GameState.RUNNING:
             self.ui.ui_running_status()
-        if self.status == GameState.PAUSED:
-            self.ui.ui_paused_status()
-        if self.status == GameState.OVER:
-            self.ui.ui_over_status()
+        if self.status == GameState.CHECKING_SOLUTION:
+            self.ui.ui_checking_solution_status()
 
     #########################################################################################################
     def reset_sudoku_table(self, sudoku_table):
@@ -428,12 +356,10 @@ class SudokuForm(QtWidgets.QWidget):
                                                                          recursion_depth,
                                                                          max_recursion_depth)
             if sudoku_table_solved is None:
-                # give time to the _solve_the_sudoku_by_backtracking method for return in cases of high depth recursion
                 self.sudoku_table = self.reset_sudoku_table(self.sudoku_table)
                 self.sudoku_table = self._insert_random_numbers_in_random_positions(self.sudoku_table, 20)
 
-
-        return sudoku_table_solved
+        return [[int(n) for n in r] for r in sudoku_table_solved]
 
     def _get_sudoku_table_previous_coordinates(self, actual_row_index, actual_column_index):
         # logging.debug(f"Invoking {self._get_sudoku_table_previous_coordinates.__name__}")
