@@ -535,7 +535,9 @@ class SudokuTableQWidget(QWidget):
                 column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
             lineEdit = self.gridLayout.itemAtPosition(self.ui_table_rows_reserved_for_numbers[row],
                                                       self.ui_table_columns_reserved_for_numbers[column]).widget()
-            lineEdit.setText(str(value))
+            lineEdit.blockSignals(True)
+            lineEdit.setText(str(value) if value is not None else None)
+            lineEdit.blockSignals(False)
 
     # signal handlers
     def _line_edit_change_handler(self, lineEdit):
@@ -558,7 +560,6 @@ class SudokuTableQWidget(QWidget):
             pass
         else:
             lineEdit.setText(None)
-        lineEdit.selectAll()
         self.ui_sudoku_table_updated.emit(self._convert_sudoku_ui_table_to_2D_numbers_list())
 
     def _update_ui_sudoku_table(self, sudoku_table):

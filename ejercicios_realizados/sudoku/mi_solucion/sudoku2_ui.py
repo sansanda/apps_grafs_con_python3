@@ -53,6 +53,7 @@ class UiSudokuForm(object):
         last_rb.setObjectName('solution')
         self.difficulty_h_layout.addWidget(last_rb)
         self.groupBox.setLayout(self.difficulty_h_layout)
+        self.difficulty_h_layout.itemAt(0).widget().click()
 
         self.vertical_layout.addWidget(self.groupBox, 0, Qt.AlignCenter)
 
