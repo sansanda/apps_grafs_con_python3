@@ -95,7 +95,7 @@ class UiSudokuForm(object):
 
     def retranslateUi(self, Sudoku_Form):
         _translate = QtCore.QCoreApplication.translate
-        Sudoku_Form.setWindowTitle(_translate("Sudoku_Form", "FRUITS Words Search"))
+        Sudoku_Form.setWindowTitle(_translate("Sudoku_Form", "SUDOKU GAME"))
         self.comprobar_solucion_pushButton.setText(_translate("Sudoku_Form", "Comprobar Solución"))
 
     def ui_generating_sudoku_status(self):
