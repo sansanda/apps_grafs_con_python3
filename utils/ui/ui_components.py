@@ -447,6 +447,10 @@ class WordsSearch_2DArrayOfButtons_Widget(QWidget):
 
 
 class SudokuTableQWidget(QWidget):
+    """
+    Widget created for graphically present the information of a 2D array list sudoku table.
+    """
+    # signal that will be emitted when the user modifies the ui sudoku table
     ui_sudoku_table_updated = pyqtSignal(list)
     ONE_DIGIT_INT_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -518,18 +522,21 @@ class SudokuTableQWidget(QWidget):
         parent.sudoku_table_updated_signal.connect(self.on_sudoku_table_updated)
 
     def on_sudoku_table_updated(self, sudoku_table_updated):
-        # signal handler
+        """
+        Signal handler. When the SudokuTableQWidget receives the this signal it will update the sudoku ui table
+        with the contents of the param sudoku_table_updated. Its a manner of separation between the data layer and
+        the ui layer.
+        :param sudoku_table_updated: 2D array list [[],[],....,[]] of values
+        :return: None
+        """
         self._update_ui_sudoku_table(sudoku_table_updated)
 
     def _insert_value_at_ui_table_pos(self, row, column, value):
         """
-        Gets the number in the row and column indicated by ther parameters.
-        Sudoku table is a 9x9 table with cells (lineEdit widgets) positions that can hold a text (of a number)
-        in the range of [1:9] inc.
-        :param row: the row where it is the number (0 to 8 positions)
-        :param column: the column where it is the number (0 to 8 positions)
-        :return: the number at the position given by the row and column parameters or
-        None if was impossible to obtain the number
+        Insert a value into a position of the ui table. The position is indicated by the row and column params.
+        :param row: the row where to insert the number (0 to 8 positions)
+        :param column: the column where to insert the number (0 to 8 positions)
+        :return: None
         """
         if (row in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1] or
                 column in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[:-1]):
@@ -542,9 +549,9 @@ class SudokuTableQWidget(QWidget):
     # signal handlers
     def _line_edit_change_handler(self, lineEdit):
         """
-        Checks the new value text value of the lineEdit Widget.
+        Checks the new text value of the lineEdit Widget.
         Only accepts representations of integers numbers between the range "1" -- "9" inclusives.
-        If the text entered is out of range then the "1" default value will be setted.
+        If the text entered is out of range then the None default value will be setted.
         :param lineEdit: The widget where the text has been changed.
         :return: None
         """
@@ -552,48 +559,40 @@ class SudokuTableQWidget(QWidget):
         # if yes --> leave it
         # if not --> set 1 as lene edit text
         text = lineEdit.text()
-        if (text.isnumeric() and
+        if (
+                text.isnumeric() and
                 int(text) in SudokuTableQWidget.ONE_DIGIT_INT_NUMBERS[1:] and
                 len(text) == 1
         ):
-            # emit signal with the 2d table representation of the ui table
             pass
         else:
             lineEdit.setText(None)
         self.ui_sudoku_table_updated.emit(self._convert_sudoku_ui_table_to_2D_numbers_list())
 
     def _update_ui_sudoku_table(self, sudoku_table):
+        """
+        Updates the ui sudoku table with the 2D array list [[],[],....,[]] of values
+        :param sudoku_table: with the 2D array list of values
+        :return: None
+        """
         # from sudoku table to ui
         for row in range(0, self.n_rows, 1):
             for column in range(0, self.n_columns, 1):
                 self._insert_value_at_ui_table_pos(row, column, sudoku_table[row][column])
 
     def _convert_sudoku_ui_table_to_2D_numbers_list(self):
-        # from ui to 2D numbers list
+        """
+        Convert the content of the ui sudoku table of lineEdits into a 2D array list [[],[],....,[]] of integers or None
+        :return: the 2D array list of integers or None values
+        """
         list = [[None for _ in range(0, self.n_columns, 1)] for _ in range(0, self.n_rows, 1)]
         for row in range(0, self.n_rows, 1):
             for column in range(0, self.n_columns, 1):
                 line_edit = self.gridLayout.itemAtPosition(self.ui_table_rows_reserved_for_numbers[row],
                                                            self.ui_table_columns_reserved_for_numbers[column]).widget()
-                value = None
                 try:
                     value = int(line_edit.text())
                 except ValueError:
-                    pass
+                    value = None
                 list[row][column] = value
         return list
-
-
-import sys
-
-
-def main():
-    app = QApplication(sys.argv)
-    parent = QtWidgets.QWidget(None)
-    ex = SudokuTableQWidget(parent, 600, 600, 60, 60)
-    ex.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()

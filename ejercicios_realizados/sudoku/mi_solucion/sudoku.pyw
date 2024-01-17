@@ -65,9 +65,9 @@ class SudokuForm(QtWidgets.QWidget):
         radio_buttons = [self.ui.difficulty_h_layout.itemAt(n).widget()
                          for n in range(0, self.n_levels_of_difficulty, 1)]
         for rb in radio_buttons:
-            rb.clicked.connect(lambda foo_param, x=rb: self.on_ui_radio_button_clicked(x))
-        self.ui.comprobar_solucion_pushButton.clicked.connect(self.on_comprobar_solucion_pushbutton_clicked)
-        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self.on_ui_sudoku_table_updated)
+            rb.clicked.connect(lambda foo_param, x=rb: self._on_ui_radio_button_clicked(x))
+        self.ui.comprobar_solucion_pushButton.clicked.connect(self._on_comprobar_solucion_pushbutton_clicked)
+        self.ui.sudoku_table.ui_sudoku_table_updated.connect(self._on_ui_sudoku_table_updated)
 
         self.timerTickerWorker = None
         self.timer_worker_thread = None
@@ -79,7 +79,7 @@ class SudokuForm(QtWidgets.QWidget):
         self.timer.singleShot(2000, self._generate_and_show_sudoku_table)
 
     def _generate_and_show_sudoku_table(self):
-        self.sudoku_table = self.reset_sudoku_table(self.sudoku_table)
+        self.sudoku_table = self._reset_sudoku_table(self.sudoku_table)
         self.sudoku_table = self._insert_random_numbers_in_random_positions(self.sudoku_table, 20)
         self.sudoku_table_solved = self._solve_the_sudoku(copy.deepcopy(self.sudoku_table),
                                                           0,
@@ -92,7 +92,7 @@ class SudokuForm(QtWidgets.QWidget):
         self.status = GameState.RUNNING
         self._update_ui()
 
-    def on_comprobar_solucion_pushbutton_clicked(self):
+    def _on_comprobar_solucion_pushbutton_clicked(self):
         self.status = GameState.CHECKING_SOLUTION
         self._update_ui()
 
@@ -112,7 +112,7 @@ class SudokuForm(QtWidgets.QWidget):
         self.status = GameState.RUNNING
         self._update_ui()
 
-    def on_ui_radio_button_clicked(self, radio_button):
+    def _on_ui_radio_button_clicked(self, radio_button):
         try:
             last_char = int(radio_button.text()[-1])
         except ValueError:
@@ -136,7 +136,7 @@ class SudokuForm(QtWidgets.QWidget):
         else:
             self.sudoku_table_updated_signal.emit(self.sudoku_table)
 
-    def on_ui_sudoku_table_updated(self, updated_sudoku_table):
+    def _on_ui_sudoku_table_updated(self, updated_sudoku_table):
         self.sudoku_table = updated_sudoku_table
 
     def _update_ui(self):
@@ -150,7 +150,7 @@ class SudokuForm(QtWidgets.QWidget):
             self.ui.ui_checking_solution_status()
 
     #########################################################################################################
-    def reset_sudoku_table(self, sudoku_table):
+    def _reset_sudoku_table(self, sudoku_table):
         for row in range(0, self.N_ROWS):
             for column in range(0, self.N_COLUMNS):
                 sudoku_table[row][column] = None
@@ -219,7 +219,6 @@ class SudokuForm(QtWidgets.QWidget):
                                           from_column_index,
                                           recursion_depth,
                                           max_recursion_depth):
-        print(recursion_depth)
         if recursion_depth > max_recursion_depth:
             # we have reached the maximum recursion depth and still there is no solution for the sudoku table
             # we return None. There should be a new call with a better sudoku table proposition
@@ -280,8 +279,10 @@ class SudokuForm(QtWidgets.QWidget):
                             # if the cell contains the max number (9) then we have to set it to None
                             # and try with the previous cell
                             if from_row_index == 0 and from_column_index == 0:
-                                # we have reach beginning (0,0) of the table by backwargning and the 0,0 cell contains
+                                # we have reach beginning (0,0) of the table going backwards and the 0,0 cell contains
                                 # the number 9, it means that the algorithm can't find a solution for the sudoku table
+                                # for _ in range(0, 30, 1):
+                                #     print("NO SOLUTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                                 return None
                             else:
                                 # the algorithm hasn't reached the beginning of the table so it still can go backwards
@@ -356,8 +357,8 @@ class SudokuForm(QtWidgets.QWidget):
                                                                          recursion_depth,
                                                                          max_recursion_depth)
             if sudoku_table_solved is None:
-                self.sudoku_table = self.reset_sudoku_table(self.sudoku_table)
-                self.sudoku_table = self._insert_random_numbers_in_random_positions(self.sudoku_table, 20)
+                sudoku_table = self._reset_sudoku_table(sudoku_table)
+                sudoku_table = self._insert_random_numbers_in_random_positions(sudoku_table, 20)
 
         return [[int(n) for n in r] for r in sudoku_table_solved]
 
