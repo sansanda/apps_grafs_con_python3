@@ -68,20 +68,6 @@ class UiSudokuForm(object):
         self.horizontal_layout_0.setContentsMargins(0, 0, 0, 0)
         self.horizontal_layout_0.setSpacing(10)
 
-        # self.generar_sudoku_pushButton = QtWidgets.QPushButton(SudokuForm)
-        # self.generar_sudoku_pushButton.setMaximumSize(200, 75)
-        # self.generar_sudoku_pushButton.setMinimumSize(200, 75)
-        # self.generar_sudoku_pushButton.setObjectName("generar_sudoku_pushButton")
-        # self.generar_sudoku_pushButton.setText('Generar Sudoku')
-        # self.horizontal_layout_0.addWidget(self.generar_sudoku_pushButton, 0, Qt.AlignCenter)
-        #
-        # self.visualizar_sudoku_pushButton = QtWidgets.QPushButton(SudokuForm)
-        # self.visualizar_sudoku_pushButton.setMaximumSize(200, 75)
-        # self.visualizar_sudoku_pushButton.setMinimumSize(200, 75)
-        # self.visualizar_sudoku_pushButton.setObjectName("visualizar_sudoku_pushButton")
-        # self.visualizar_sudoku_pushButton.setText('Visualizar Sudoku')
-        # self.horizontal_layout_0.addWidget(self.visualizar_sudoku_pushButton, 0, Qt.AlignCenter)
-
         self.comprobar_solucion_pushButton = QtWidgets.QPushButton(SudokuForm)
         self.comprobar_solucion_pushButton.setMaximumSize(200, 75)
         self.comprobar_solucion_pushButton.setMinimumSize(200, 75)
