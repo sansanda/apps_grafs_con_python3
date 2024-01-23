@@ -7,7 +7,7 @@ from PyQt5.QtCore import QThread, QObject, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.data_structures.data_structures import generate_empty_2D_list, get_2D_list_previous_coordinates, \
-    get_2D_list_next_coordinates, value_appearances_in
+    get_2D_list_next_coordinates, value_appearances_in, get_nonet_coordinates
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 import sys
 import copy
@@ -224,7 +224,7 @@ class SudokuForm(QtWidgets.QWidget):
 
     def _appearances_in_nonet(self, sudoku_table, number, row, column):
         number_appearances = 0
-        nonet_row, nonet_column = self._get_nonet_indexes(row, column)
+        nonet_row, nonet_column = get_nonet_coordinates(row, column)
         for n in self._get_numbers_in_sudoku_table_nonet(sudoku_table, nonet_row, nonet_column):
             if n is None:
                 continue
@@ -379,18 +379,6 @@ class SudokuForm(QtWidgets.QWidget):
                 sudoku_table = self._insert_random_numbers_in_random_positions(sudoku_table, 20)
 
         return [[int(n) for n in r] for r in sudoku_table_solved]
-
-    def _get_nonet_indexes(self, row, column):
-        nonet_row = nonet_column = None
-        for row_index in range(0, len(self.SUDOKU_TABLE_NONETS_ROWS)):
-            if row in self.SUDOKU_TABLE_NONETS_ROWS[row_index]:
-                nonet_row = row_index
-                break
-        for column_index in range(0, len(self.SUDOKU_TABLE_NONETS_COLUMNS)):
-            if column in self.SUDOKU_TABLE_NONETS_COLUMNS[column_index]:
-                nonet_column = column_index
-                break
-        return nonet_row, nonet_column
 
     def _get_numbers_in_sudoku_table_nonet(self, sudoku_table, nonet_row, nonet_column):
         nonet_numbers = []
