@@ -122,6 +122,14 @@ def get_2D_list_next_coordinates(_2D_list, actual_row_index, actual_column_index
 
 
 def get_nonet_coordinates(row, column):
+    """
+    Get the Nonet Coordinates of a cell (row and column of the cell is passed as input parameters).
+    In a 2D list 9x9 cells, A Nonet is a sub 2D List of 3x3 inside the parent 2D List (the biggest). So,
+    a 2D list of 9x9 cells has got 9 Nonets (3x3).
+    :param row: The row of the cell, which we want to know which Nonet belong to.
+    :param column: The column of the cell, which we want to know which Nonet belong to.
+    :return: Pair of integers (row, column) that indicates the coordinates of the nonet that contains the cell.
+    """
     nonet_row = nonet_column = None
     if 2 >= row >= 0:
         nonet_row = 0
