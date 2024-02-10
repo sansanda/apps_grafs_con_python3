@@ -83,12 +83,11 @@ def get_values_in_2D_list(_2D_list, zone, *args):
     return values
 
 
-def value_appearances_in(_2D_list, zone, matching_value, *args):
+def value_appearances_in(_2D_list, coordinates_list, matching_value):
     number_appearances = 0
-    values = get_values_in_2D_list(_2D_list, zone, *args)
-    for value in values:
+    for coordinate in coordinates_list:
         try:
-            if int(value) == int(matching_value):
+            if int(_2D_list[coordinate[0]][coordinate[1]]) == int(matching_value):
                 number_appearances = number_appearances + 1
         except TypeError:
             # if you are here is because value is None. Nothing to do then
@@ -96,7 +95,37 @@ def value_appearances_in(_2D_list, zone, matching_value, *args):
     return number_appearances
 
 
-def get_2D_list_previous_coordinates(_2D_list, actual_row_index, actual_column_index):
+def get_2D_list_position_coordinates(_2D_list, actual_position, next_or_previous='next_position'):
+    """
+    Given a _2D_list is implemented as double list array like this:
+    [[None for _ in range(0, n_columns, 1)] for _ in range(0, n_rows, 1)].
+    Based on that _2D_list implementation, the function use get_2D_list_previous_coordinates or
+    get_2D_list_next_coordinates functions to return (based on the next_or_previous parameter) the values of
+    row and column for the previous or the next cell.
+    :param _2D_list: The double list array implementation.
+    :param actual_position: A list or tuple with the row and the column of the actual position.
+    :param next_or_previous: String that tells to the function which cell return, the previous or the next.
+    :return: The values of row and column for the previous or the next cell based on the next_or_previous parameter.
+    """
+    if next_or_previous == 'next_position':
+        return _get_2D_list_next_coordinates(_2D_list, actual_position[0], actual_position[1])
+    else:
+        return _get_2D_list_previous_coordinates(_2D_list, actual_position[0], actual_position[1])
+
+
+def _get_2D_list_previous_coordinates(_2D_list, actual_row_index, actual_column_index):
+    """
+    Given a _2D_list is implemented as double list array like this:
+    [[None for _ in range(0, n_columns, 1)] for _ in range(0, n_rows, 1)].
+    Based on that _2D_list implementation, the function will return the previous cell coordinates
+    (values of the row and the column for the previous position) given the actual position
+    (actual_row_index, actual_column_index):
+    :param _2D_list: The double list array implementation.
+    :param actual_row_index: The row of the actual position.
+    :param actual_column_index: The column of the actual position.
+    :return: The values of row and column for the previous cell or 0,0 if actual_row_index, actual_column_index
+    are the coordinates of the first cell (the upper-left) of the _2D_list.
+    """
     n_columns = len(_2D_list[0])
 
     if actual_column_index == 0 and actual_row_index == 0:
@@ -108,7 +137,18 @@ def get_2D_list_previous_coordinates(_2D_list, actual_row_index, actual_column_i
         return actual_row_index - 1, n_columns - 1
 
 
-def get_2D_list_next_coordinates(_2D_list, actual_row_index, actual_column_index):
+def _get_2D_list_next_coordinates(_2D_list, actual_row_index, actual_column_index):
+    """Given a _2D_list is implemented as double list array like this:
+    [[None for _ in range(0, n_columns, 1)] for _ in range(0, n_rows, 1)].
+    Based on that _2D_list implementation, the function will return the next cell coordinates
+    (values of the row and the column for the next position) given the actual position
+    (actual_row_index, actual_column_index):
+    :param _2D_list: The double list array implementation.
+    :param actual_row_index: The row of the actual position.
+    :param actual_column_index: The column of the actual position.
+    :return: The values of row and column for the next cell or len(_2D_list), len(_2D_list[0])
+    if actual_row_index, actual_column_index are the coordinates of the last cell (the bottom-right) of the _2D_list.
+    """
     n_rows = len(_2D_list)
     n_columns = len(_2D_list[0])
 
@@ -145,6 +185,15 @@ def get_nonet_coordinates(row, column):
         nonet_column = 2
     return nonet_row, nonet_column
 
+
+def _get_2D_list_sublist_coordinates(initial_coordinates, sublist_len):
+    coordinates = []
+    for row in range(initial_coordinates[0], initial_coordinates[0] + sublist_len):
+        for column in range(initial_coordinates[1], initial_coordinates[1] + sublist_len):
+            coordinates.append((row, column))
+    return coordinates
+
+
 if __name__ == "__main__":
     dd_list = generate_empty_2D_list()
     print(dd_list)
@@ -159,5 +208,11 @@ if __name__ == "__main__":
                [1, 3, 4, -5, -8, 6, 8, 9, 9]]  # 8
     # dd_list = insert_values_in_2D_list_giving_coordinates(dd_list, [1, 3, 4, 5], [[0, 2], [1, 1], [3, 3], [0, 3]])
     # print(value_appearances_in(dd_list, 'column', 8, 8))
+
     print(get_values_in_2D_list(dd_list, 'coordinates', [(0, 0), (0, 3), (2, 2), (8, 4), (6, 1), (4, 4)]))
-    print(get_nonet_coordinates(5,3))
+    nonet_coordinates = get_nonet_coordinates(5, 3)
+    print('nonet_coords', nonet_coordinates)
+    nonet_len = 3
+    initial_coordinates = nonet_coordinates[0] * nonet_len, nonet_coordinates[1] * nonet_len
+    print('initial_coords', initial_coordinates)
+    print(_get_2D_list_sublist_coordinates(initial_coordinates, nonet_len))

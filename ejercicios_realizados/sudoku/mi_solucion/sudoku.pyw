@@ -6,8 +6,10 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
-from utils.data_structures.data_structures import generate_empty_2D_list, get_2D_list_previous_coordinates, \
-    get_2D_list_next_coordinates, value_appearances_in, get_nonet_coordinates
+from utils.data_structures.data_structures import (generate_empty_2D_list,
+                                                   value_appearances_in,
+                                                   get_nonet_coordinates,
+                                                   get_2D_list_position_coordinates)
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 import sys
 import copy
@@ -25,6 +27,7 @@ class GameState(IntEnum):
     INITIATING = 1
     RUNNING = 2
     CHECKING_SOLUTION = 3
+
 
 class SudokuForm(QtWidgets.QWidget):
     """
@@ -200,10 +203,12 @@ class SudokuForm(QtWidgets.QWidget):
                 while sudoku_table[random_row][random_column] is not None:
                     random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
                     random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
+                random_row_coordinates = [(random_row, c) for c in range(len(sudoku_table[random_row]))]
+                random_column_coordinates = [(r, random_column) for r in range(len(sudoku_table))]
                 random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
                 if (
-                        value_appearances_in(sudoku_table, 'row', random_number, random_row) == 0 and
-                        value_appearances_in(sudoku_table, 'column', random_number, random_column) == 0 and
+                        value_appearances_in(sudoku_table, random_row_coordinates, random_number) == 0 and
+                        value_appearances_in(sudoku_table, random_column_coordinates, random_number) == 0 and
                         self._appearances_in_nonet(sudoku_table, random_number, random_row, random_column) == 0
                 ):
                     sudoku_table[random_row][random_column] = random_number
@@ -232,9 +237,10 @@ class SudokuForm(QtWidgets.QWidget):
                 number_appearances = number_appearances + 1
         return number_appearances
 
-    def _solve_the_sudoku_by_backtracking(self, sudoku_table,
-                                          from_row_index,
-                                          from_column_index,
+    def _solve_the_sudoku_by_backtracking(self,
+                                          sudoku_table,
+                                          from_row,
+                                          from_column,
                                           recursion_depth,
                                           max_recursion_depth):
         if recursion_depth > max_recursion_depth:
@@ -243,26 +249,28 @@ class SudokuForm(QtWidgets.QWidget):
             return None
         else:
             # we haven't reached the max recursion depth, we can still looking for the solution
-            if ((sudoku_table[from_row_index][from_column_index] is not None) and
-                    (from_row_index == self.N_ROWS - 1) and
-                    (from_column_index == self.N_COLUMNS - 1)):
+            if ((sudoku_table[from_row][from_column] is not None) and
+                    (from_row == self.N_ROWS - 1) and
+                    (from_column == self.N_COLUMNS - 1)):
                 # if you are here is because the algorithm has reached the end of the table and so it has a solution
                 return sudoku_table
             else:
                 # if you are here is because the algorithm hasn't reached the end of the table and, for the moment,
                 # there is not a solution for the sudoku table copy
-                if (sudoku_table[from_row_index][from_column_index] is None or
-                        isinstance(sudoku_table[from_row_index][from_column_index], str)):
+                if (sudoku_table[from_row][from_column] is None or
+                        isinstance(sudoku_table[from_row][from_column], str)):
                     # if you are here is because the sudoku_table cell contains or None or a str int value
-                    if sudoku_table[from_row_index][from_column_index] is None:
+                    if sudoku_table[from_row][from_column] is None:
                         # if you are here is because the sudoku_table cell contains None
                         # we will search for a valid number for the cell in from_row_index, from_column_index coords
                         number = 1
+                        from_row_coordinates = [(from_row, c) for c in range(len(sudoku_table[from_row]))]
+                        from_column_coordinates = [(r, from_column) for r in range(len(sudoku_table))]
                         while (
-                                value_appearances_in(sudoku_table, 'row', number, from_row_index) > 0 or
-                                value_appearances_in(sudoku_table, 'column', number, from_column_index) > 0 or
-                                self._appearances_in_nonet(sudoku_table, number, from_row_index,
-                                                           from_column_index) > 0
+                                value_appearances_in(sudoku_table, from_row_coordinates, number) > 0 or
+                                value_appearances_in(sudoku_table, from_column_coordinates, number) > 0 or
+                                self._appearances_in_nonet(sudoku_table, number, from_row,
+                                                           from_column) > 0
                         ):
                             number = number + 1
                             if number > 9:
@@ -270,9 +278,11 @@ class SudokuForm(QtWidgets.QWidget):
                         # here the number could be 10 or less
                         if number > 9:
                             # then there is not a good number for this cell, we have to go backwards in the table
-                            sudoku_table[from_row_index][from_column_index] = None
+                            sudoku_table[from_row][from_column] = None
                             previous_row_index, previous_column_index = (
-                                get_2D_list_previous_coordinates(sudoku_table, from_row_index,from_column_index))
+                                get_2D_list_position_coordinates(sudoku_table,
+                                                                 (from_row, from_column),
+                                                                 next_or_previous='previous_position'))
                             return self._solve_the_sudoku_by_backtracking(sudoku_table,
                                                                           previous_row_index,
                                                                           previous_column_index,
@@ -280,9 +290,11 @@ class SudokuForm(QtWidgets.QWidget):
                                                                           max_recursion_depth)
                         else:
                             # there is a good number for this cell, then we can go to the next table position
-                            sudoku_table[from_row_index][from_column_index] = str(number)
+                            sudoku_table[from_row][from_column] = str(number)
                             next_row_index, next_column_index = (
-                                get_2D_list_next_coordinates(sudoku_table, from_row_index, from_column_index))
+                                get_2D_list_position_coordinates(sudoku_table,
+                                                                 (from_row, from_column),
+                                                                 next_or_previous='next_position'))
                             return self._solve_the_sudoku_by_backtracking(sudoku_table,
                                                                           next_row_index,
                                                                           next_column_index,
@@ -292,11 +304,11 @@ class SudokuForm(QtWidgets.QWidget):
                         # if you are here is because the sudoku_table cell contains a str int value
                         # this occurs because we are going back in the table
                         # then we have to search for another number from the number in the actual cell
-                        number = int(sudoku_table[from_row_index][from_column_index])
+                        number = int(sudoku_table[from_row][from_column])
                         if number == 9:
                             # if the cell contains the max number (9) then we have to set it to None
                             # and try with the previous cell
-                            if from_row_index == 0 and from_column_index == 0:
+                            if from_row == 0 and from_column == 0:
                                 # we have reach beginning (0,0) of the table going backwards and the 0,0 cell contains
                                 # the number 9, it means that the algorithm can't find a solution for the sudoku table
                                 # for _ in range(0, 30, 1):
@@ -304,9 +316,11 @@ class SudokuForm(QtWidgets.QWidget):
                                 return None
                             else:
                                 # the algorithm hasn't reached the beginning of the table so it still can go backwards
-                                sudoku_table[from_row_index][from_column_index] = None
+                                sudoku_table[from_row][from_column] = None
                                 previous_row_index, previous_column_index = (
-                                    get_2D_list_previous_coordinates(sudoku_table, from_row_index, from_column_index))
+                                    get_2D_list_position_coordinates(sudoku_table,
+                                                                     (from_row, from_column),
+                                                                     next_or_previous='previous_position'))
                                 return self._solve_the_sudoku_by_backtracking(sudoku_table,
                                                                               previous_row_index,
                                                                               previous_column_index,
@@ -316,11 +330,13 @@ class SudokuForm(QtWidgets.QWidget):
                             # if the cell doesn't contain the max number (9) then we have can increase the cell value
                             # and try to go looking forward for the solution
                             number = number + 1
+                            from_row_coordinates = [(from_row, c) for c in range(len(sudoku_table[from_row]))]
+                            from_column_coordinates = [(r, from_column) for r in range(len(sudoku_table))]
                             while (
-                                    value_appearances_in(sudoku_table, 'row', number, from_row_index) > 0 or
-                                    value_appearances_in(sudoku_table, 'column', number, from_column_index) > 0 or
-                                    self._appearances_in_nonet(sudoku_table, number, from_row_index,
-                                                               from_column_index) > 0
+                                    value_appearances_in(sudoku_table, from_row_coordinates, number) > 0 or
+                                    value_appearances_in(sudoku_table, from_column_coordinates, number) > 0 or
+                                    self._appearances_in_nonet(sudoku_table, number, from_row,
+                                                               from_column) > 0
                             ):
                                 number = number + 1
                                 if number > 9:
@@ -328,9 +344,11 @@ class SudokuForm(QtWidgets.QWidget):
                             # here the number could be 10 or less
                             if number > 9:
                                 # there is not a good number for this cell, the algorithm has to go backwards
-                                sudoku_table[from_row_index][from_column_index] = None
+                                sudoku_table[from_row][from_column] = None
                                 previous_row_index, previous_column_index = (
-                                    get_2D_list_previous_coordinates(sudoku_table, from_row_index, from_column_index))
+                                    get_2D_list_position_coordinates(sudoku_table,
+                                                                     (from_row, from_column),
+                                                                     next_or_previous='previous_position'))
                                 return self._solve_the_sudoku_by_backtracking(sudoku_table,
                                                                               previous_row_index,
                                                                               previous_column_index,
@@ -338,9 +356,11 @@ class SudokuForm(QtWidgets.QWidget):
                                                                               max_recursion_depth)
                             else:
                                 # there is a good number for this cell, then we can go to the next table position
-                                sudoku_table[from_row_index][from_column_index] = str(number)
+                                sudoku_table[from_row][from_column] = str(number)
                                 next_row_index, next_column_index = (
-                                    get_2D_list_next_coordinates(sudoku_table, from_row_index, from_column_index))
+                                    get_2D_list_position_coordinates(sudoku_table,
+                                                                     (from_row, from_column),
+                                                                     next_or_previous='next_position'))
                                 return self._solve_the_sudoku_by_backtracking(sudoku_table,
                                                                               next_row_index,
                                                                               next_column_index,
@@ -351,10 +371,12 @@ class SudokuForm(QtWidgets.QWidget):
                     # first random numbers introduced in the initialization of the sudoku table
                     # the algorithm has to mark the number as modificable (converting to an str number) and go forward
                     # for the solution.
-                    sudoku_table[from_row_index][from_column_index] = str(
-                        sudoku_table[from_row_index][from_column_index])
+                    sudoku_table[from_row][from_column] = str(
+                        sudoku_table[from_row][from_column])
                     next_row_index, next_column_index = (
-                        get_2D_list_next_coordinates(sudoku_table, from_row_index, from_column_index))
+                        get_2D_list_position_coordinates(sudoku_table,
+                                                         (from_row, from_column),
+                                                         next_or_previous='next_position'))
                     return self._solve_the_sudoku_by_backtracking(sudoku_table,
                                                                   next_row_index,
                                                                   next_column_index,
@@ -386,9 +408,7 @@ class SudokuForm(QtWidgets.QWidget):
                 nonet_row in self.ONE_DIGIT_INT_NUMBERS[0:3]):
             for row in self.SUDOKU_TABLE_NONETS_ROWS[nonet_row]:
                 for column in self.SUDOKU_TABLE_NONETS_COLUMNS[nonet_column]:
-                    nonet_numbers.append(
-                        sudoku_table[row][column]
-                    )
+                    nonet_numbers.append(sudoku_table[row][column])
         return nonet_numbers
 
     #########################################################################################################
