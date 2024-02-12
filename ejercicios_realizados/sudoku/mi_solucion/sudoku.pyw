@@ -236,16 +236,6 @@ class SudokuForm(QtWidgets.QWidget):
                 break
         return sudoku_table
 
-    def _appearances_in_nonet(self, sudoku_table, number, row, column):
-        number_appearances = 0
-        nonet_row, nonet_column = get_nonet_coordinates(row, column)
-        for n in self._get_numbers_in_sudoku_table_nonet(sudoku_table, nonet_row, nonet_column):
-            if n is None:
-                continue
-            if int(n) == number:
-                number_appearances = number_appearances + 1
-        return number_appearances
-
     def _solve_the_sudoku_by_backtracking(self,
                                           sudoku_table,
                                           from_row,
@@ -434,15 +424,6 @@ class SudokuForm(QtWidgets.QWidget):
                 sudoku_table = self._insert_random_numbers_in_random_positions(sudoku_table, 20)
 
         return [[int(n) for n in r] for r in sudoku_table_solved]
-
-    def _get_numbers_in_sudoku_table_nonet(self, sudoku_table, nonet_row, nonet_column):
-        nonet_numbers = []
-        if (nonet_column in self.ONE_DIGIT_INT_NUMBERS[0:3] and
-                nonet_row in self.ONE_DIGIT_INT_NUMBERS[0:3]):
-            for row in self.SUDOKU_TABLE_NONETS_ROWS[nonet_row]:
-                for column in self.SUDOKU_TABLE_NONETS_COLUMNS[nonet_column]:
-                    nonet_numbers.append(sudoku_table[row][column])
-        return nonet_numbers
 
     #########################################################################################################
 
