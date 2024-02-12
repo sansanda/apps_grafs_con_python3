@@ -9,7 +9,7 @@ from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.data_structures.data_structures import (generate_empty_2D_list,
                                                    value_appearances_in,
                                                    get_nonet_coordinates,
-                                                   get_2D_list_position_coordinates)
+                                                   get_2D_list_position_coordinates, _get_2D_list_sublist_coordinates)
 from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
 import sys
 import copy
@@ -203,13 +203,22 @@ class SudokuForm(QtWidgets.QWidget):
                 while sudoku_table[random_row][random_column] is not None:
                     random_row = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
                     random_column = random.choice(self.ONE_DIGIT_INT_NUMBERS[:-1])
-                random_row_coordinates = [(random_row, c) for c in range(len(sudoku_table[random_row]))]
-                random_column_coordinates = [(r, random_column) for r in range(len(sudoku_table))]
+                initial_coordinates = (random_row, 0)
+                final_coordinates = (random_row, len(sudoku_table) - 1)
+                random_row_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates, final_coordinates)
+                initial_coordinates = (0, random_column)
+                final_coordinates = (len(sudoku_table) - 1, random_column)
+                random_column_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates, final_coordinates)
+                random_nonet_coordinates = get_nonet_coordinates(random_row, random_column)
+                initial_coordinates = (random_nonet_coordinates[0] * 3, random_nonet_coordinates[1] * 3)
+                final_coordinates = (initial_coordinates[0] + 2, initial_coordinates[1] + 2)
+                random_none_area_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates, final_coordinates)
+
                 random_number = random.choice(self.ONE_DIGIT_INT_NUMBERS[1:])
                 if (
                         value_appearances_in(sudoku_table, random_row_coordinates, random_number) == 0 and
                         value_appearances_in(sudoku_table, random_column_coordinates, random_number) == 0 and
-                        self._appearances_in_nonet(sudoku_table, random_number, random_row, random_column) == 0
+                        value_appearances_in(sudoku_table, random_none_area_coordinates, random_number) == 0
                 ):
                     sudoku_table[random_row][random_column] = random_number
                     break
@@ -264,13 +273,25 @@ class SudokuForm(QtWidgets.QWidget):
                         # if you are here is because the sudoku_table cell contains None
                         # we will search for a valid number for the cell in from_row_index, from_column_index coords
                         number = 1
-                        from_row_coordinates = [(from_row, c) for c in range(len(sudoku_table[from_row]))]
-                        from_column_coordinates = [(r, from_column) for r in range(len(sudoku_table))]
+
+                        initial_coordinates = (from_row, 0)
+                        final_coordinates = (from_row, len(sudoku_table) - 1)
+                        from_row_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates,
+                                                                                final_coordinates)
+                        initial_coordinates = (0, from_column)
+                        final_coordinates = (len(sudoku_table) - 1, from_column)
+                        from_column_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates,
+                                                                                   final_coordinates)
+                        nonet_coordinates = get_nonet_coordinates(from_row, from_column)
+                        initial_coordinates = (nonet_coordinates[0] * 3, nonet_coordinates[1] * 3)
+                        final_coordinates = (initial_coordinates[0] + 2, initial_coordinates[1] + 2)
+                        nonet_area_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates,
+                                                                                  final_coordinates)
+
                         while (
                                 value_appearances_in(sudoku_table, from_row_coordinates, number) > 0 or
                                 value_appearances_in(sudoku_table, from_column_coordinates, number) > 0 or
-                                self._appearances_in_nonet(sudoku_table, number, from_row,
-                                                           from_column) > 0
+                                value_appearances_in(sudoku_table, nonet_area_coordinates, number) > 0
                         ):
                             number = number + 1
                             if number > 9:
@@ -330,13 +351,25 @@ class SudokuForm(QtWidgets.QWidget):
                             # if the cell doesn't contain the max number (9) then we have can increase the cell value
                             # and try to go looking forward for the solution
                             number = number + 1
-                            from_row_coordinates = [(from_row, c) for c in range(len(sudoku_table[from_row]))]
-                            from_column_coordinates = [(r, from_column) for r in range(len(sudoku_table))]
+
+                            initial_coordinates = (from_row, 0)
+                            final_coordinates = (from_row, len(sudoku_table) - 1)
+                            from_row_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates,
+                                                                                    final_coordinates)
+                            initial_coordinates = (0, from_column)
+                            final_coordinates = (len(sudoku_table) - 1, from_column)
+                            from_column_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates,
+                                                                                       final_coordinates)
+                            nonet_coordinates = get_nonet_coordinates(from_row, from_column)
+                            initial_coordinates = (nonet_coordinates[0] * 3, nonet_coordinates[1] * 3)
+                            final_coordinates = (initial_coordinates[0] + 2, initial_coordinates[1] + 2)
+                            nonet_area_coordinates = _get_2D_list_sublist_coordinates(initial_coordinates,
+                                                                                      final_coordinates)
+
                             while (
                                     value_appearances_in(sudoku_table, from_row_coordinates, number) > 0 or
                                     value_appearances_in(sudoku_table, from_column_coordinates, number) > 0 or
-                                    self._appearances_in_nonet(sudoku_table, number, from_row,
-                                                               from_column) > 0
+                                    value_appearances_in(sudoku_table, nonet_area_coordinates, number) > 0
                             ):
                                 number = number + 1
                                 if number > 9:

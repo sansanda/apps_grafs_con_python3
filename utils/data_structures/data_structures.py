@@ -186,10 +186,18 @@ def get_nonet_coordinates(row, column):
     return nonet_row, nonet_column
 
 
-def _get_2D_list_sublist_coordinates(initial_coordinates, sublist_len):
+def _get_2D_list_sublist_coordinates(initial_coordinates, final_coordinates):
+    """
+    Return a list of coordinates of a bidiminensional sublist (an Area) given the initial coordinates (x0,y0) and
+    the final coordinates (x1, y1). Zero counts and last numbers of the coordinates also counts.
+    :param initial_coordinates: Initial coordinates (x0,y0) or (row, column)
+    :param final_coordinates: Final coordinates (x1,y1) or (row, column)
+    :return: List of coordinates of the bidiminensional sublist [[]*n_rows]*n_culumns that represent the area defined
+    by the initial_coordinates and final_coordinates.
+    """
     coordinates = []
-    for row in range(initial_coordinates[0], initial_coordinates[0] + sublist_len):
-        for column in range(initial_coordinates[1], initial_coordinates[1] + sublist_len):
+    for row in range(initial_coordinates[0], final_coordinates[0] + 1):
+        for column in range(initial_coordinates[1], final_coordinates[1] + 1):
             coordinates.append((row, column))
     return coordinates
 
@@ -209,10 +217,17 @@ if __name__ == "__main__":
     # dd_list = insert_values_in_2D_list_giving_coordinates(dd_list, [1, 3, 4, 5], [[0, 2], [1, 1], [3, 3], [0, 3]])
     # print(value_appearances_in(dd_list, 'column', 8, 8))
 
-    print(get_values_in_2D_list(dd_list, 'coordinates', [(0, 0), (0, 3), (2, 2), (8, 4), (6, 1), (4, 4)]))
-    nonet_coordinates = get_nonet_coordinates(5, 3)
-    print('nonet_coords', nonet_coordinates)
-    nonet_len = 3
-    initial_coordinates = nonet_coordinates[0] * nonet_len, nonet_coordinates[1] * nonet_len
+    # print(get_values_in_2D_list(dd_list, 'coordinates', [(0, 0), (0, 3), (2, 2), (8, 4), (6, 1), (4, 4)]))
+    # nonet_coordinates = get_nonet_coordinates(5, 3)
+    # print('nonet_coords', nonet_coordinates)
+    # nonet_len = 3
+    # initial_coordinates = nonet_coordinates[0] * nonet_len, nonet_coordinates[1] * nonet_len
+    initial_coordinates = 0, 0
+    # final_coordinates = (initial_coordinates[0] + nonet_len, initial_coordinates[1] + nonet_len)
+    final_coordinates = 0, 3
+
     print('initial_coords', initial_coordinates)
-    print(_get_2D_list_sublist_coordinates(initial_coordinates, nonet_len))
+    print('final_coords', final_coordinates)
+    l = [(0, c) for c in range(3)]
+    print(l)
+    print(_get_2D_list_sublist_coordinates(initial_coordinates, final_coordinates))
