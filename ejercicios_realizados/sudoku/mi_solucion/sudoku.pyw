@@ -1,18 +1,19 @@
+import sys
+import copy
 import logging
 import random
-import time
+
 from enum import IntEnum
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import QThread, QObject, pyqtSignal, QTimer
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from ejercicios_realizados.sudoku.mi_solucion.sudoku2_ui import UiSudokuForm
 from utils.data_structures.data_structures import (generate_empty_2D_list,
                                                    value_appearances_in,
                                                    get_nonet_coordinates,
-                                                   get_2D_list_position_coordinates, _get_2D_list_sublist_coordinates)
-from utils.timer_workers_etc.timers_workers_etc import TimerTickerWorker
-import sys
-import copy
+                                                   get_2D_list_position_coordinates,
+                                                   _get_2D_list_sublist_coordinates)
+
 
 _format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=_format, level=logging.DEBUG, datefmt="%H:%M:%S")
